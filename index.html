@@ -162,23 +162,41 @@ function calculer(){
 /* =========================
    ENVOI EMAIL
 ========================= */
+
 function envoyerCommande(){
+
+  if(
+    !clientNom.value ||
+    !clientTel.value ||
+    !kmInput.value ||
+    !poidsInput.value
+  ){
+    alert("Merci de compléter tous les champs avant l’envoi.");
+    return;
+  }
+
   const sujet = "Commande Léman Courses";
   const corps =
-`Client : ${clientNom.value}
+`COMMANDE TRANSPORT – LÉMAN COURSES
+
+Client : ${clientNom.value}
 Téléphone : ${clientTel.value}
 
 Distance : ${kmInput.value} km
 Poids : ${poidsInput.value} kg
-Service : ${serviceSelect.value}
+Service : ${serviceSelect.value.toUpperCase()}
 Période : ${horaireSelect.value}
 
-${resultat.textContent}`;
+${resultat.textContent}
 
-  window.location.href =
-   "mailto:info@leman-courses.ch"+
-   "?subject="+encodeURIComponent(sujet)+
-   "&body="+encodeURIComponent(corps);
+Merci de confirmer la prise en charge.`;
+
+  const mailtoLink =
+    "mailto:info@leman-courses.ch" +
+    "?subject=" + encodeURIComponent(sujet) +
+    "&body=" + encodeURIComponent(corps);
+
+  window.open(mailtoLink, "_self");
 }
 
 /* =========================
