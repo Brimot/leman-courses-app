@@ -1,110 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Léman Courses – Calculateur express</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0B2A44">
-  <link rel="manifest" href="manifest.json">
-
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg, #0B2A44, #0F3D6B);
-      color: #fff;
-    }
-
-    .card {
-      max-width: 420px;
-      margin: auto;
-      background: #fff;
-      color: #000;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    h1 {
-      text-align: center;
-      color: #0B2A44;
-      margin-bottom: 5px;
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 20px;
-    }
-
-    select, input {
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
-
-    .price {
-      margin-top: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      text-align: center;
-      color: #0B2A44;
-    }
-
-    .details {
-      margin-top: 10px;
-      font-size: 13px;
-      background: #f2f2f2;
-      padding: 10px;
-      border-radius: 8px;
-      white-space: pre-line;
-    }
-
-    .footer {
-      margin-top: 15px;
-      font-size: 11px;
-      text-align: center;
-      color: #777;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="card">
-  <h1>LÉMAN COURSES</h1>
-  <div class="subtitle">Transport express – 24h/24 – 7j/7</div>
-
-  <select id="type">
-    <option value="35">Course locale – 35 CHF</option>
-    <option value="65">Course inter-villes – 65 CHF</option>
-  </select>
-
-  <input id="km" type="number" min="0" value="5" placeholder="Distance en km">
-
-  <select id="urgence">
-    <option value="0">Standard</option>
-    <option value="25">Express (+25 %)</option>
-  </select>
-
-  <select id="horaire">
-    <option value="1">Jour (06h–22h)</option>
-    <option value="1.25">Nuit (+25 %)</option>
-    <option value="1.3">Dimanche / Férié (+30 %)</option>
-  </select>
-
-  <div class="price" id="resultat">CHF 35.–</div>
-  <div class="details" id="details"></div>
-
-  <div class="footer">Prix indicatif – devis confirmé avant course</div>
-</div>
-
 <script>
+  const { jsPDF } = window.jspdf;
+
   function arrondir5(valeur) {
     return Math.round(valeur / 5) * 5;
   }
@@ -115,10 +11,7 @@
     const urgence = parseFloat(document.getElementById("urgence").value);
     const horaire = parseFloat(document.getElementById("horaire").value);
 
-    let supplementKm = 0;
-    if (km > 10) {
-      supplementKm = (km - 10) * 2.5;
-    }
+    let supplementKm = km > 10 ? (km - 10) * 2.5 : 0;
 
     let prix = (base + supplementKm) * (1 + urgence / 100) * horaire;
     prix = arrondir5(prix);
@@ -132,11 +25,50 @@ Supplément km : ${supplementKm.toFixed(2)} CHF
 Urgence : +${urgence} %
 Horaire : × ${horaire}
 → Total arrondi : ${prix} CHF`;
+
+    return { base, km, supplementKm, urgence, horaire, prix };
+  }
+
+  function genererPDF() {
+    const data = calculer();
+    const doc = new jsPDF();
+
+    const date = new Date().toLocaleDateString("fr-CH");
+
+    doc.setFontSize(16);
+    doc.text("DEVIS – LÉMAN COURSES", 20, 20);
+
+    doc.setFontSize(11);
+    doc.text(`Date : ${date}`, 20, 30);
+
+    doc.line(20, 34, 190, 34);
+
+    doc.text(`Type de course : ${data.base === 35 ? "Locale" : "Inter-villes"}`, 20, 45);
+    doc.text(`Distance : ${data.km} km`, 20, 55);
+    doc.text(`Supplément km : ${data.supplementKm.toFixed(2)} CHF`, 20, 65);
+    doc.text(`Urgence : +${data.urgence} %`, 20, 75);
+    doc.text(`Horaire : x ${data.horaire}`, 20, 85);
+
+    doc.line(20, 95, 190, 95);
+
+    doc.setFontSize(14);
+    doc.text(`TOTAL ESTIMÉ : CHF ${data.prix}.–`, 20, 110);
+
+    doc.setFontSize(10);
+    doc.text(
+      "Prix indicatif. Le devis définitif est confirmé avant la course.\nLéman Courses – Transport express 24h/24 – 7j/7",
+      20,
+      130
+    );
+
+    doc.save(`Devis_Leman_Courses_${date.replace(/\./g, "_")}.pdf`);
   }
 
   ["type", "km", "urgence", "horaire"].forEach(id =>
     document.getElementById(id).addEventListener("input", calculer)
   );
+
+  document.getElementById("pdfBtn").addEventListener("click", genererPDF);
 
   calculer();
 
@@ -144,6 +76,3 @@ Horaire : × ${horaire}
     navigator.serviceWorker.register("./sw.js");
   }
 </script>
-
-</body>
-</html>
