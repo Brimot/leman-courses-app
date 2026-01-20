@@ -74,7 +74,7 @@ button:hover{background:#09335f}
   <option value="65">Course inter-villes</option>
 </select>
 
-<input type="number" id="km" placeholder="Distance (km – si inter-villes)" min="0">
+<input type="number" id="km" placeholder="Distance (km – inter-villes)" min="0">
 
 <select id="urgence">
   <option value="0">Standard</option>
@@ -102,13 +102,19 @@ Prix indicatif – confirmation avant la course
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
+const typeEl = document.getElementById("type")
+const kmEl = document.getElementById("km")
+const urgenceEl = document.getElementById("urgence")
+const horaireEl = document.getElementById("horaire")
+const resultatEl = document.getElementById("resultat")
+
 function arrondi5(v){ return Math.round(v/5)*5 }
 
 function calculer(){
-  const base = parseFloat(type.value)
-  const km = parseFloat(document.getElementById("km").value) || 0
-  const urgence = parseFloat(urgenceSelect.value)
-  const horaire = parseFloat(horaireSelect.value)
+  const base = parseFloat(typeEl.value)
+  const km = parseFloat(kmEl.value) || 0
+  const urgence = parseFloat(urgenceEl.value)
+  const horaire = parseFloat(horaireEl.value)
 
   let supplementKm = 0
   if(base === 65 && km > 10){
@@ -118,7 +124,7 @@ function calculer(){
   let prix = (base + supplementKm) * (1 + urgence/100) * horaire
   prix = arrondi5(prix)
 
-  resultat.innerText = "CHF " + prix + ".–"
+  resultatEl.innerText = "CHF " + prix + ".–"
   return { base, km, supplementKm, urgence, horaire, prix }
 }
 
@@ -151,14 +157,12 @@ function genererPDF(){
   doc.save("Devis_Leman_Courses.pdf")
 }
 
-const urgenceSelect = document.getElementById("urgence")
-const horaireSelect = document.getElementById("horaire")
-
-["type","km","urgence","horaire"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", calculer)
+[typeEl, kmEl, urgenceEl, horaireEl].forEach(el=>{
+  el.addEventListener("input", calculer)
 })
 
-pdfBtn.addEventListener("click", genererPDF)
+document.getElementById("pdfBtn").addEventListener("click", genererPDF)
+
 calculer()
 
 if("serviceWorker" in navigator){
