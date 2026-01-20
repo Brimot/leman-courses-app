@@ -301,5 +301,38 @@ ${remarques.value}
   location.href=`mailto:${DISPATCH_EMAIL}?subject=Commande Léman Courses&body=${encodeURIComponent(body)}`;
 };
 </script>
+  <script>
+const colisPoids = document.getElementById("colisPoids");
+const urgence = document.getElementById("urgence");
+const resultat = document.getElementById("resultat");
+const detail = document.getElementById("detail");
+const sendBtn = document.getElementById("sendBtn");
+
+function updatePrice() {
+  const poids = parseFloat(colisPoids.value || 0);
+
+  let prixBase = 45;
+  let coefPoids = poids <= 5 ? 1 :
+                  poids <= 10 ? 1.1 :
+                  poids <= 20 ? 1.25 :
+                  poids <= 30 ? 1.4 : null;
+
+  if (coefPoids === null) {
+    alert("Colis > 30 kg → devis spécial");
+    return;
+  }
+
+  let prix = prixBase * coefPoids;
+  prix = Math.round(prix / 5) * 5;
+
+  resultat.textContent = `CHF ${prix}.–`;
+  detail.textContent = `Poids : ${poids} kg`;
+}
+
+// 🔥 ÉCOUTEURS OBLIGATOIRES
+colisPoids.addEventListener("input", updatePrice);
+urgence.addEventListener("change", updatePrice);
+</script>
+
 </body>
 </html>
