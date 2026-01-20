@@ -4,76 +4,61 @@
 <meta charset="UTF-8">
 <title>Léman Courses – Calculateur express</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0B2A44">
 
 <style>
 body{
   margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:linear-gradient(135deg,#0b2a44,#0f3d66);
   padding:20px;
-  font-family:Arial,Helvetica,sans-serif;
-  background:linear-gradient(135deg,#0b2a44,#0f3d6b);
-  color:#fff;
 }
-
 .card{
-  max-width:420px;
+  max-width:460px;
   margin:auto;
   background:#fff;
-  color:#000;
   border-radius:16px;
   padding:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,.3);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-
 h1{
   text-align:center;
   color:#0b2a44;
 }
-
 p{
   text-align:center;
-  font-size:14px;
-  color:#444;
+  font-size:13px;
+  color:#555;
 }
-
 select,input,button{
   width:100%;
-  padding:14px;
   margin-top:12px;
-  font-size:16px;
+  padding:14px;
+  font-size:15px;
   border-radius:10px;
   border:1px solid #ccc;
 }
-
 button{
-  background:#0B2A44;
+  background:#0b2a44;
   color:#fff;
-  border:none;
   font-weight:bold;
+  border:none;
   cursor:pointer;
 }
-
-button:hover{
-  background:#0e3c5c;
-}
-
+button:hover{background:#09335f}
 .price{
   margin-top:20px;
   font-size:26px;
   text-align:center;
-  font-weight:bold;
   color:#0b2a44;
+  font-weight:bold;
 }
-
-.details{
+.small{
+  font-size:11px;
+  color:#666;
+  text-align:center;
   margin-top:10px;
-  font-size:13px;
-  background:#f2f2f2;
-  padding:10px;
-  border-radius:8px;
-  color:#000;
 }
 </style>
 </head>
@@ -84,23 +69,16 @@ button:hover{
 <h1>LÉMAN COURSES</h1>
 <p>Transport express 24h/24 – 7j/7</p>
 
-<select id="client">
-  <option value="standard">Client privé</option>
-  <option value="hotel">Hôtel</option>
-  <option value="ems">EMS / foyer</option>
-  <option value="entreprise">Entreprise / cabinet</option>
-</select>
-
 <select id="type">
-  <option value="35">Course locale (CHF 35.–)</option>
-  <option value="65">Course inter-villes (CHF 65.–)</option>
+  <option value="35">Course locale</option>
+  <option value="65">Course inter-villes</option>
 </select>
 
-<input id="km" type="number" placeholder="Distance (km – inter-villes)" min="0">
+<input type="number" id="km" placeholder="Distance (km – si inter-villes)" min="0">
 
 <select id="urgence">
   <option value="0">Standard</option>
-  <option value="10">Urgente (+10%)</option>
+  <option value="10">Urgent (+10%)</option>
   <option value="25">Express (+25%)</option>
 </select>
 
@@ -113,99 +91,78 @@ button:hover{
 <button onclick="calculer()">Calculer le tarif</button>
 
 <div class="price" id="resultat">CHF 35.–</div>
-<div class="details" id="details"></div>
 
 <button id="pdfBtn">Générer le devis PDF</button>
+
+<div class="small">
+Prix indicatif – confirmation avant la course
+</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script>
-const { jsPDF } = window.jspdf;
+function arrondi5(v){ return Math.round(v/5)*5 }
 
 function calculer(){
-  const base = parseFloat(type.value);
-  const km = parseFloat(document.getElementById("km").value) || 0;
-  const urgence = parseFloat(urgenceSelect.value);
-  const horaire = parseFloat(horaireSelect.value);
-  const client = clientSelect.value;
+  const base = parseFloat(type.value)
+  const km = parseFloat(document.getElementById("km").value) || 0
+  const urgence = parseFloat(urgenceSelect.value)
+  const horaire = parseFloat(horaireSelect.value)
 
-  let supplementKm = 0;
+  let supplementKm = 0
   if(base === 65 && km > 10){
-    supplementKm = (km - 10) * 2.5;
+    supplementKm = (km - 10) * 2.5
   }
 
-  let coeff = 1;
-  if(client === "hotel") coeff = 0.9;
-  if(client === "ems") coeff = 0.85;
-  if(client === "entreprise") coeff = 1.1;
+  let prix = (base + supplementKm) * (1 + urgence/100) * horaire
+  prix = arrondi5(prix)
 
-  let prix = (base + supplementKm) * (1 + urgence/100) * horaire * coeff;
-  prix = Math.round(prix / 5) * 5;
-
-  resultat.innerText = "CHF " + prix + ".–";
-
-  const labels = {
-    standard:"Client privé",
-    hotel:"Hôtel",
-    ems:"EMS / foyer",
-    entreprise:"Entreprise"
-  };
-
-  details.innerHTML = `
-  Client : ${labels[client]}<br>
-  Distance : ${km} km<br>
-  Supplément km : CHF ${supplementKm.toFixed(2)}<br>
-  Urgence : ${urgence}%<br>
-  Horaire : x${horaire}
-  `;
-
-  return {base,km,supplementKm,urgence,horaire,client,prix};
+  resultat.innerText = "CHF " + prix + ".–"
+  return { base, km, supplementKm, urgence, horaire, prix }
 }
 
 function genererPDF(){
-  const d = calculer();
-  const doc = new jsPDF();
-  const date = new Date().toLocaleString("fr-CH");
+  const d = calculer()
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  const date = new Date().toLocaleDateString("fr-CH")
 
-  doc.setFontSize(16);
-  doc.text("DEVIS – LÉMAN COURSES",20,20);
+  doc.setFontSize(16)
+  doc.text("DEVIS – LÉMAN COURSES",20,20)
 
-  doc.setFontSize(11);
-  doc.text(`Date : ${date}`,20,30);
-  doc.text(`Client : ${d.client}`,20,40);
-  doc.text(`Type de course : ${d.base===35?"Locale":"Inter-villes"}`,20,50);
-  doc.text(`Distance : ${d.km} km`,20,60);
-  doc.text(`Supplément km : CHF ${d.supplementKm.toFixed(2)}`,20,70);
-  doc.text(`Urgence : ${d.urgence}%`,20,80);
-  doc.text(`Horaire : x${d.horaire}`,20,90);
+  doc.setFontSize(11)
+  doc.text(`Date : ${date}`,20,35)
+  doc.text(`Type : ${d.base===35?"Locale":"Inter-villes"}`,20,45)
+  doc.text(`Distance : ${d.km} km`,20,55)
+  doc.text(`Supplément km : CHF ${d.supplementKm}`,20,65)
+  doc.text(`Urgence : ${d.urgence}%`,20,75)
+  doc.text(`Horaire : x${d.horaire}`,20,85)
 
-  doc.setFontSize(14);
-  doc.text(`TOTAL ESTIMÉ : CHF ${d.prix}.–`,20,110);
+  doc.setFontSize(14)
+  doc.text(`TOTAL : CHF ${d.prix}.–`,20,105)
 
-  doc.setFontSize(10);
+  doc.setFontSize(10)
   doc.text(
     "Prix indicatif. Devis confirmé avant la course.\nLéman Courses – Transport express 24h/24 – 7j/7",
-    20,130
-  );
+    20,125
+  )
 
-  doc.save("Devis_Leman_Courses.pdf");
+  doc.save("Devis_Leman_Courses.pdf")
 }
 
-pdfBtn.addEventListener("click",genererPDF);
+const urgenceSelect = document.getElementById("urgence")
+const horaireSelect = document.getElementById("horaire")
 
-const type = document.getElementById("type");
-const urgenceSelect = document.getElementById("urgence");
-const horaireSelect = document.getElementById("horaire");
-const clientSelect = document.getElementById("client");
+["type","km","urgence","horaire"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", calculer)
+})
 
-["type","km","urgence","horaire","client"].forEach(id=>{
-  document.getElementById(id).addEventListener("input",calculer);
-});
-
-calculer();
+pdfBtn.addEventListener("click", genererPDF)
+calculer()
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("./sw.js");
+  navigator.serviceWorker.register("./sw.js")
 }
 </script>
 
