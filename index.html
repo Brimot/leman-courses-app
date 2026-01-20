@@ -1,19 +1,20 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>LÉMAN COURSES – Calculateur</title>
+<title>LÉMAN COURSES – Commande</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-  font-family: Arial, Helvetica, sans-serif;
-  background: linear-gradient(135deg,#0b2a44,#0f3d66);
+  font-family:Arial,Helvetica,sans-serif;
+  background:linear-gradient(135deg,#0b2a44,#0f3d66);
   color:#fff;
   padding:20px;
 }
 .card{
-  max-width:480px;
+  max-width:520px;
   margin:auto;
   background:#fff;
   color:#000;
@@ -21,11 +22,10 @@ body{
   padding:20px;
 }
 h1{text-align:center;color:#0b2a44;}
-p{text-align:center;font-size:13px;}
 label{font-weight:bold;font-size:13px;}
 input,select,button{
   width:100%;
-  margin-top:8px;
+  margin-top:6px;
   padding:12px;
   border-radius:8px;
   border:1px solid #ccc;
@@ -36,10 +36,8 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
-button:disabled{background:#999;}
 .price{
   font-size:28px;
-  font-weight:bold;
   text-align:center;
   margin:15px 0;
   color:#0b2a44;
@@ -49,14 +47,12 @@ button:disabled{background:#999;}
   background:#f2f2f2;
   padding:10px;
   border-radius:8px;
-  margin-top:10px;
 }
-.form-client{
-  margin-top:20px;
+.section{
+  margin-top:15px;
   border-top:1px solid #ddd;
   padding-top:15px;
 }
-.hidden{display:none;}
 </style>
 </head>
 
@@ -64,128 +60,127 @@ button:disabled{background:#999;}
 
 <div class="card">
 <h1>LÉMAN COURSES</h1>
-<p>Transport express 24h/24 – 7j/7</p>
 
-<label>Distance (km)</label>
-<input type="number" id="km" min="1">
+<!-- CODES POSTAUX -->
+<div class="section">
+<label>NPA prise en charge</label>
+<input id="cpStart" placeholder="Ex: 1000">
 
+<label>NPA livraison</label>
+<input id="cpEnd" placeholder="Ex: 1200">
+</div>
+
+<!-- OPTIONS -->
+<div class="section">
 <label>Poids du colis (kg)</label>
-<input type="number" id="poids" min="1">
+<input type="number" id="poids">
 
 <label>Service</label>
 <select id="service">
-  <option value="normal">Normal</option>
-  <option value="urgent">Urgent</option>
-  <option value="express">Express</option>
+<option value="normal">Normal</option>
+<option value="urgent">Urgent</option>
+<option value="express">Express</option>
 </select>
 
 <label>Période</label>
 <select id="horaire">
-  <option value="jour">Jour</option>
-  <option value="nuit">Nuit / Dimanche</option>
+<option value="jour">Jour</option>
+<option value="nuit">Nuit / Dimanche</option>
 </select>
 
-<button onclick="updatePrice()">Calculer le tarif</button>
+<button onclick="calculate()">Calculer le tarif</button>
+</div>
 
-<div class="price" id="resultat">CHF —</div>
-
-<div class="info" id="serviceInfo"></div>
+<div class="price" id="result">CHF —</div>
+<div class="info" id="detail"></div>
 
 <!-- FORMULAIRE CLIENT -->
-<div class="form-client">
-<h3>📦 Informations client</h3>
+<div class="section">
+<h3>📦 Données client</h3>
 
-<label>Nom / Entreprise</label>
-<input type="text" id="client">
+<label>Nom / Prénom</label>
+<input id="clientNom">
 
 <label>Téléphone</label>
-<input type="tel" id="tel">
+<input id="clientTel">
 
-<label>Lieu de prise en charge</label>
-<input type="text" id="pickup">
+<label>Adresse complète</label>
+<input id="clientAdr">
 
-<label>Lieu de livraison</label>
-<input type="text" id="delivery">
+<h3>📍 Livraison</h3>
+
+<label>Nom / Prénom</label>
+<input id="livNom">
+
+<label>Adresse complète</label>
+<input id="livAdr">
 
 <label>Nature du colis</label>
-<input type="text" id="nature">
+<input id="nature">
 
 <button id="sendBtn" disabled>Envoyer la commande</button>
 </div>
 
-<p style="font-size:11px;text-align:center;margin-top:10px;">
-Prix indicatif – confirmation avant la course
-</p>
-
 </div>
 
 <script>
-// GRILLE TARIFAIRE INTERNE
-const grille = [
-  {min:0,max:10,normal:6.5,urgent:43,express:30},
-  {min:11,max:30,normal:10,urgent:73,express:48},
-  {min:31,max:80,normal:13.5,urgent:103,express:66},
-  {min:81,max:150,normal:17,urgent:133,express:84},
-  {min:151,max:250,normal:20.5,urgent:163,express:102},
-  {min:251,max:500,normal:38,urgent:313,express:192},
-  {min:501,max:1500,normal:108,urgent:913,express:552}
+// GRILLE TARIFAIRE
+const grille=[
+{min:0,max:10,normal:6.5,urgent:43,express:30},
+{min:11,max:30,normal:10,urgent:73,express:48},
+{min:31,max:80,normal:13.5,urgent:103,express:66},
+{min:81,max:150,normal:17,urgent:133,express:84},
+{min:151,max:250,normal:20.5,urgent:163,express:102},
+{min:251,max:500,normal:38,urgent:313,express:192},
+{min:501,max:1500,normal:108,urgent:913,express:552}
 ];
 
-// COEFF POIDS
 function coefPoids(p){
-  if(p<=5) return 1;
-  if(p<=10) return 1.1;
-  if(p<=20) return 1.25;
-  if(p<=30) return 1.4;
-  return null;
+if(p<=5) return 1;
+if(p<=10) return 1.1;
+if(p<=20) return 1.25;
+if(p<=30) return 1.4;
+return null;
 }
 
-function updatePrice(){
-  const km = Number(document.getElementById("km").value);
-  const poids = Number(document.getElementById("poids").value);
-  const service = document.getElementById("service").value;
-  const horaire = document.getElementById("horaire").value;
-  const result = document.getElementById("resultat");
-  const sendBtn = document.getElementById("sendBtn");
-
-  if(!km || !poids){
-    result.textContent = "CHF —";
-    sendBtn.disabled = true;
-    return;
-  }
-
-  if(poids > 30){
-    alert("⚠️ Colis > 30 kg : devis spécial requis");
-    result.textContent = "Devis requis";
-    sendBtn.disabled = true;
-    return;
-  }
-
-  const ligne = grille.find(g => km >= g.min && km <= g.max);
-  if(!ligne){
-    result.textContent = "Distance hors grille";
-    sendBtn.disabled = true;
-    return;
-  }
-
-  let prix = ligne[service];
-
-  if(horaire === "nuit") prix *= 1.25;
-
-  prix *= coefPoids(poids);
-  prix = Math.round(prix / 5) * 5;
-
-  result.textContent = `CHF ${prix}.-`;
-  sendBtn.disabled = false;
-
-  updateServiceInfo(service);
+// CALCUL DISTANCE VIA OSRM
+async function getKm(cp1,cp2){
+const geo = async cp =>{
+const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cp},Switzerland`);
+const d=await r.json();
+return [d[0].lon,d[0].lat];
+};
+const a=await geo(cp1);
+const b=await geo(cp2);
+const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a[0]},${a[1]};${b[0]},${b[1]}?overview=false`);
+const d=await r.json();
+return d.routes[0].distance/1000;
 }
 
-function updateServiceInfo(s){
-  const box = document.getElementById("serviceInfo");
-  if(s==="normal") box.textContent="Course standard – enlèvement planifié, livraison selon disponibilité.";
-  if(s==="urgent") box.textContent="Course urgente – priorité élevée, prise en charge accélérée.";
-  if(s==="express") box.textContent="Course express – priorité absolue, enlèvement immédiat, livraison directe.";
+async function calculate(){
+const cp1=cpStart.value;
+const cp2=cpEnd.value;
+const poids=Number(poidsInput=poids.value);
+const service=serviceSelect=service.value;
+const horaire=horaireSelect=horaire.value;
+
+if(poids>30){
+alert("Colis > 30 kg : devis spécial requis");
+return;
+}
+
+const km=Math.round(await getKm(cp1,cp2));
+const row=grille.find(g=>km>=g.min && km<=g.max);
+if(!row){result.textContent="Devis requis";return;}
+
+let prix=row[service];
+if(horaire==="nuit") prix*=1.25;
+prix*=coefPoids(poids);
+prix=Math.round(prix/5)*5;
+
+result.textContent=`CHF ${prix}.-`;
+detail.textContent=`Distance ${km} km | ${service.toUpperCase()} | ${poids} kg`;
+sendBtn.disabled=false;
 }
 </script>
 
