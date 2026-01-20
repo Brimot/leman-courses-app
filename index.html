@@ -2,19 +2,19 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Léman Courses – Commande & Devis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Léman Courses – Commande</title>
 
 <style>
   body{
     margin:0;
     font-family:Arial,Helvetica,sans-serif;
     background:linear-gradient(135deg,#0B2A44,#0F3D5E);
-    padding:20px;
     color:#fff;
+    padding:20px;
   }
   .card{
-    max-width:720px;
+    max-width:560px;
     margin:auto;
     background:#fff;
     color:#000;
@@ -22,115 +22,65 @@
     padding:20px;
     box-shadow:0 20px 40px rgba(0,0,0,.3);
   }
-  h1{ text-align:center; color:#0B2A44; margin:8px 0 4px; }
-  .sub{ text-align:center; color:#444; margin:0 0 18px; font-size:13px; }
-  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:780px){ .grid{ grid-template-columns:1fr; } }
-
-  .box{
-    border:1px solid #e6e6e6;
-    border-radius:12px;
-    padding:14px;
-    background:#fafafa;
-  }
-  .box h2{ margin:0 0 10px; font-size:14px; color:#0B2A44; }
-  label{ font-weight:bold; font-size:12px; }
+  h1{margin:0 0 6px 0;text-align:center;color:#0B2A44;}
+  .sub{margin:0 0 16px 0;text-align:center;color:#555;font-size:13px;}
+  label{font-weight:bold;font-size:13px;display:block;margin-top:10px;}
   input,select,textarea,button{
     width:100%;
-    margin-top:6px;
-    margin-bottom:12px;
     padding:12px;
-    border-radius:8px;
+    margin-top:6px;
+    border-radius:10px;
     border:1px solid #ccc;
     font-size:14px;
     box-sizing:border-box;
-    background:#fff;
   }
-  textarea{ min-height:70px; resize:vertical; }
-  .row{ display:flex; gap:10px; }
-  .row > *{ flex:1; }
-  .actions{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
-  @media (max-width:780px){ .actions{ grid-template-columns:1fr; } }
-
-  button{
-    background:#0B2A44;
-    color:#fff;
-    font-weight:bold;
-    cursor:pointer;
-    border:none;
-  }
-  button.secondary{ background:#25D366; }
-  button.gray{ background:#555; }
-  button:disabled{ opacity:.5; cursor:not-allowed; }
-
+  textarea{min-height:70px;resize:vertical;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
   .price{
     text-align:center;
     font-size:28px;
     font-weight:bold;
     color:#0B2A44;
-    margin:8px 0 2px;
+    margin:16px 0 6px 0;
   }
-  .detail{ text-align:center; color:#333; font-size:13px; }
-  .hint{ text-align:center; color:#666; font-size:11px; margin-top:10px; }
-  .warning{ color:#b00020; font-weight:bold; text-align:center; margin:10px 0; }
-
-  .pill{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
-    background:#e9f2ff;
-    color:#0B2A44;
-    font-size:12px;
+  .detail{
+    text-align:center;
+    font-size:13px;
+    color:#333;
+    margin-bottom:10px;
+  }
+  .warning{
+    text-align:center;
+    font-size:13px;
     font-weight:bold;
+    color:#b00020;
+    margin-top:6px;
   }
-
-  .saved{
-    max-height:220px;
-    overflow:auto;
-    background:#fff;
-    border:1px solid #e6e6e6;
-    border-radius:12px;
-    padding:10px;
-  }
-  .savedItem{
-    border-bottom:1px dashed #ddd;
-    padding:10px 6px;
-  }
-  .savedItem:last-child{ border-bottom:none; }
-  .savedTop{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:center;
-    margin-bottom:6px;
-  }
-  .savedBtns{ display:flex; gap:8px; flex-wrap:wrap; }
-  .miniBtn{
-    width:auto;
-    padding:8px 10px;
-    border-radius:8px;
+  .status{
     font-size:12px;
+    color:#444;
+    background:#f2f2f2;
+    padding:10px;
+    border-radius:10px;
+    margin-top:10px;
+  }
+  button{
+    background:#0B2A44;
+    color:#fff;
     border:none;
+    font-weight:bold;
     cursor:pointer;
+    margin-top:10px;
   }
-  .miniBtn.blue{ background:#0B2A44; color:#fff; }
-  .miniBtn.green{ background:#25D366; color:#fff; }
-  .miniBtn.dark{ background:#333; color:#fff; }
-  .miniBtn.red{ background:#b00020; color:#fff; }
-
-  /* Popup > 30 kg */
-  .modal{
-    position:fixed; inset:0; background:rgba(0,0,0,.55);
-    display:none; align-items:center; justify-content:center; padding:20px;
+  button.secondary{background:#25D366;}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .foot{
+    margin-top:10px;
+    font-size:11px;
+    text-align:center;
+    color:#666;
   }
-  .modal .mcard{
-    width:min(520px, 100%);
-    background:#fff; color:#000; border-radius:16px; padding:18px;
-    box-shadow:0 20px 60px rgba(0,0,0,.35);
-  }
-  .modal h3{ margin:0 0 8px; color:#0B2A44; }
-  .modal p{ margin:0 0 12px; color:#333; }
 </style>
 </head>
 
@@ -139,737 +89,393 @@
   <h1>LÉMAN COURSES</h1>
   <div class="sub">Transport express 24h/24 – 7j/7</div>
 
-  <div class="grid">
-
-    <!-- MODE CLIENT -->
-    <div class="box">
-      <h2>Type de client</h2>
-      <label>Mode</label>
-      <select id="mode">
-        <option value="particulier">Particulier</option>
-        <option value="entreprise">Entreprise</option>
-        <option value="regie">Régie / Gestionnaire</option>
-      </select>
-
-      <div id="modeEntreprise" style="display:none;">
-        <label>Nom de l’entreprise</label>
-        <input id="societe" placeholder="Ex. ABC SA">
-        <label>N° TVA / IDE (optionnel)</label>
-        <input id="ide" placeholder="CHE-...">
-      </div>
-
-      <div id="modeRegie" style="display:none;">
-        <label>Nom de la régie</label>
-        <input id="regieNom" placeholder="Ex. Régie XYZ">
-        <label>Référence dossier / immeuble</label>
-        <input id="regieRef" placeholder="Ex. Dossier 2026-001">
-        <label>E-mail facturation (optionnel)</label>
-        <input id="regieFactMail" placeholder="facturation@...">
-      </div>
-
-      <h2 style="margin-top:10px;">Contact</h2>
-      <label>Nom & Prénom</label>
-      <input id="clientNom" placeholder="Nom complet">
-
-      <div class="row">
-        <div>
-          <label>Téléphone</label>
-          <input id="clientTel" placeholder="+41 ...">
-        </div>
-        <div>
-          <label>Email (optionnel)</label>
-          <input id="clientEmail" placeholder="client@...">
-        </div>
-      </div>
-
-      <label>Remarques (optionnel)</label>
-      <textarea id="remarques" placeholder="Ex. code d’accès, étage, consignes…"></textarea>
+  <!-- TRAJET (NPA -> KM AUTO) -->
+  <div class="row">
+    <div>
+      <label>NPA départ</label>
+      <input id="npaDepart" inputmode="numeric" placeholder="Ex : 1000" />
     </div>
+    <div>
+      <label>NPA arrivée</label>
+      <input id="npaArrivee" inputmode="numeric" placeholder="Ex : 1200" />
+    </div>
+  </div>
 
-    <!-- COURSE -->
-    <div class="box">
-      <h2>Course</h2>
+  <label>Kilomètres (calcul automatique)</label>
+  <input id="km" type="number" readonly placeholder="Calcul automatique…" />
 
-      <div class="row">
-        <div>
-          <label>Service</label>
-          <select id="service">
-            <option value="normal">Normal</option>
-            <option value="urgent">Urgent</option>
-            <option value="express">Express</option>
-          </select>
-        </div>
-        <div>
-          <label>Horaire</label>
-          <select id="horaire">
-            <option value="jour">Jour</option>
-            <option value="nuit">Nuit / Dimanche</option>
-          </select>
-        </div>
-      </div>
+  <div class="status" id="kmStatus">Entre les deux NPA pour calculer la distance.</div>
 
+  <!-- OPTIONS TARIF -->
+  <div class="row">
+    <div>
+      <label>Poids du colis (kg)</label>
+      <input id="poids" type="number" min="1" placeholder="Max 30 kg" />
+    </div>
+    <div>
       <label>Inter-villes ?</label>
       <select id="interville">
         <option value="non">Non</option>
         <option value="oui">Oui</option>
       </select>
-      <div style="margin-top:-6px; margin-bottom:10px; font-size:12px; color:#333;">
-        Si <b>Oui</b> → + <b>1.20 CHF / km</b> (prise en charge et livraison inter-villes)
+      <div style="font-size:11px;color:#666;margin-top:-8px;">
+        (appliqué uniquement si distance &gt; 10 km)
       </div>
-
-      <h2>Adresses</h2>
-      <label>Prise en charge – Adresse</label>
-      <input id="pickupAddress" placeholder="Rue, numéro, ville">
-
-      <div class="row">
-        <div>
-          <label>Code postal (prise en charge)</label>
-          <input id="pickupZip" placeholder="1000">
-        </div>
-        <div>
-          <label>Ville (optionnel)</label>
-          <input id="pickupCity" placeholder="Lausanne">
-        </div>
-      </div>
-
-      <label>Livraison – Adresse</label>
-      <input id="dropAddress" placeholder="Rue, numéro, ville">
-
-      <div class="row">
-        <div>
-          <label>Code postal (livraison)</label>
-          <input id="dropZip" placeholder="1200">
-        </div>
-        <div>
-          <label>Ville (optionnel)</label>
-          <input id="dropCity" placeholder="Genève">
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>KM (auto via CP)</label>
-          <input id="kmAuto" placeholder="—" disabled>
-        </div>
-        <div>
-          <label>KM (manuel secours)</label>
-          <input type="number" id="kmManual" placeholder="Ex. 25" min="1">
-        </div>
-      </div>
-
-      <button class="gray" id="kmBtn" onclick="calcKmFromZip()">Calculer km automatiquement</button>
-      <div id="kmStatus" style="font-size:12px;color:#333;margin-top:-6px;margin-bottom:10px;"></div>
-
-      <h2>Colis</h2>
-      <div class="row">
-        <div>
-          <label>Poids (kg)</label>
-          <input type="number" id="poids" min="1" placeholder="Ex. 5">
-        </div>
-        <div>
-          <label>Nature</label>
-          <input id="nature" placeholder="Documents, petit colis, fragile…">
-        </div>
-      </div>
-
-      <div class="price" id="prix">CHF –.–</div>
-      <div class="detail" id="detail"></div>
-      <div class="warning" id="warning"></div>
-
-      <div style="background:#f3f7ff;border:1px solid #dbe7ff;border-radius:12px;padding:10px;margin-top:10px;">
-        <div class="pill" id="servicePill">NORMAL</div>
-        <div id="serviceInfo" style="margin-top:8px;font-size:12px;color:#0B2A44;">
-          Course standard – prise en charge rapide, livraison selon disponibilité.
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="sendEmailBtn" onclick="envoyerEmail()">Envoyer la commande (Email)</button>
-        <button class="secondary" id="sendWaBtn" onclick="envoyerWhatsapp()">Envoyer la commande (WhatsApp)</button>
-        <button id="pdfBtn" class="gray" onclick="telechargerPDF()">Télécharger devis PDF</button>
-        <button id="saveBtn" class="gray" onclick="sauverCommande()">Sauvegarder la commande</button>
-      </div>
-
-      <div class="hint">Prix indicatif – confirmation avant prise en charge</div>
     </div>
-
   </div>
 
-  <!-- HISTORIQUE -->
-  <div class="box" style="margin-top:14px;">
-    <h2>Commandes sauvegardées</h2>
-    <div class="row">
-      <button class="gray" onclick="exportCSV()">Exporter CSV</button>
-      <button class="gray" onclick="clearSaved()">Tout supprimer</button>
+  <div class="row">
+    <div>
+      <label>Service</label>
+      <select id="service">
+        <option value="normal">Normal</option>
+        <option value="urgent">Urgent</option>
+        <option value="express">Express</option>
+      </select>
     </div>
-    <div class="saved" id="savedList"></div>
+    <div>
+      <label>Horaire</label>
+      <select id="horaire">
+        <option value="jour">Jour</option>
+        <option value="nuit">Nuit / Dimanche</option>
+      </select>
+    </div>
   </div>
 
-</div>
+  <div class="price" id="prix">CHF –.–</div>
+  <div class="detail" id="detail"></div>
+  <div class="warning" id="warning"></div>
 
-<!-- Modal > 30kg -->
-<div class="modal" id="weightModal">
-  <div class="mcard">
-    <h3>Devis spécial requis</h3>
-    <p>Le colis dépasse <b>30 kg</b>. Merci de demander un devis spécial (prise en charge sur mesure).</p>
-    <button onclick="closeWeightModal()">OK</button>
+  <!-- FORMULAIRE CLIENT -->
+  <hr style="border:none;border-top:1px solid #e6e6e6;margin:18px 0;" />
+
+  <div class="row">
+    <div>
+      <label>Nom & Prénom</label>
+      <input id="clientNom" />
+    </div>
+    <div>
+      <label>Téléphone</label>
+      <input id="clientTel" />
+    </div>
   </div>
-</div>
 
-<!-- jsPDF -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <div class="row">
+    <div>
+      <label>Email (optionnel)</label>
+      <input id="clientEmail" />
+    </div>
+    <div>
+      <label>Entreprise (optionnel)</label>
+      <input id="clientSociete" />
+    </div>
+  </div>
+
+  <label>Adresse prise en charge (optionnel)</label>
+  <input id="pickupAdr" placeholder="Rue, n°, ville…" />
+
+  <label>Adresse livraison (optionnel)</label>
+  <input id="livAdr" placeholder="Rue, n°, ville…" />
+
+  <label>Nature du colis</label>
+  <input id="nature" placeholder="Ex : documents, petit colis, matériel…" />
+
+  <label>Remarques (optionnel)</label>
+  <textarea id="remarques" placeholder="Horaires, étage, code, consignes…"></textarea>
+
+  <button id="btnEmail" onclick="envoyerEmail()" disabled>Envoyer la commande par email</button>
+  <button id="btnWA" class="secondary" onclick="envoyerWhatsapp()" disabled>Envoyer par WhatsApp</button>
+
+  <div class="foot">Prix indicatif – confirmation avant prise en charge. Colis &gt; 30 kg : devis spécial.</div>
+</div>
 
 <script>
-/* ==========================
-   1) TARIFS + COEF POIDS
-========================== */
-function coefPoids(p){
-  // Ajustable : là, le poids a un vrai impact
-  // 1–5 kg = 1.00
-  // 6–10 = 1.10
-  // 11–20 = 1.25
-  // 21–30 = 1.45
-  if(p<=5) return 1.00;
-  if(p<=10) return 1.10;
-  if(p<=20) return 1.25;
-  if(p<=30) return 1.45;
-  return null; // >30 = devis
-}
+/* =========================
+   PARAMÈTRES TARIFAIRES
+========================= */
 
+// Base selon km + service (ta logique “grille” interne ; client ne la voit pas)
 function baseKm(km, service){
-  // grille donnée (partie utile jusqu’à 300km ici)
-  // Tu peux étendre facilement si tu veux toute ta liste jusqu’à 1500.
-  if(km<=10)  return service==="normal"?6.5  : service==="urgent"?43  : 30;
-  if(km<=30)  return service==="normal"?10   : service==="urgent"?73  : 48;
-  if(km<=80)  return service==="normal"?13.5 : service==="urgent"?103 : 66;
-  if(km<=150) return service==="normal"?17   : service==="urgent"?133 : 84;
-  if(km<=250) return service==="normal"?20.5 : service==="urgent"?163 : 102;
-  if(km<=300) return service==="normal"?24   : service==="urgent"?193 : 120;
-  return null; // hors grille → devis
+  // Tu peux ajuster ces montants si besoin
+  if(km <= 10)  return service==="normal"? 35 : service==="urgent"? 55 : 75;
+  if(km <= 30)  return service==="normal"? 55 : service==="urgent"? 85 : 115;
+  if(km <= 80)  return service==="normal"? 75 : service==="urgent"? 115: 155;
+  if(km <= 150) return service==="normal"? 95 : service==="urgent"? 145: 195;
+  if(km <= 300) return service==="normal"? 125: service==="urgent"? 185: 245;
+  if(km <= 600) return service==="normal"? 165: service==="urgent"? 245: 325;
+  if(km <= 1500)return service==="normal"? 205: service==="urgent"? 305: 405;
+  return null; // hors plage => devis
 }
 
-function arrondir5(x){ return Math.round(x/5)*5; }
+// Poids : coef + supplément minimum (pour que 5kg ≠ 20kg même avec arrondi)
+function reglePoids(p){
+  if(p <= 5)  return {coef:1.00, sup:0};
+  if(p <= 10) return {coef:1.10, sup:5};
+  if(p <= 20) return {coef:1.25, sup:10};
+  if(p <= 30) return {coef:1.40, sup:20};
+  return null; // >30 => devis spécial
+}
 
-/* ==========================
-   2) ELEMENTS
-========================== */
-const mode = document.getElementById("mode");
-const modeEntreprise = document.getElementById("modeEntreprise");
-const modeRegie = document.getElementById("modeRegie");
+function arrondi5_haut(x){
+  return Math.ceil(x / 5) * 5;
+}
 
-const clientNom = document.getElementById("clientNom");
-const clientTel = document.getElementById("clientTel");
-const clientEmail = document.getElementById("clientEmail");
-const societe = document.getElementById("societe");
-const ide = document.getElementById("ide");
-const regieNom = document.getElementById("regieNom");
-const regieRef = document.getElementById("regieRef");
-const regieFactMail = document.getElementById("regieFactMail");
-const remarques = document.getElementById("remarques");
-
-const pickupAddress = document.getElementById("pickupAddress");
-const pickupZip = document.getElementById("pickupZip");
-const pickupCity = document.getElementById("pickupCity");
-const dropAddress = document.getElementById("dropAddress");
-const dropZip = document.getElementById("dropZip");
-const dropCity = document.getElementById("dropCity");
-
-const kmAuto = document.getElementById("kmAuto");
-const kmManual = document.getElementById("kmManual");
+/* =========================
+   DOM
+========================= */
+const npaDepart = document.getElementById("npaDepart");
+const npaArrivee = document.getElementById("npaArrivee");
+const kmInput = document.getElementById("km");
 const kmStatus = document.getElementById("kmStatus");
 
-const poids = document.getElementById("poids");
-const nature = document.getElementById("nature");
-const service = document.getElementById("service");
-const horaire = document.getElementById("horaire");
-const interville = document.getElementById("interville");
+const poidsInput = document.getElementById("poids");
+const intervilleInput = document.getElementById("interville");
+const serviceInput = document.getElementById("service");
+const horaireInput = document.getElementById("horaire");
 
 const prixEl = document.getElementById("prix");
 const detailEl = document.getElementById("detail");
 const warningEl = document.getElementById("warning");
 
-const servicePill = document.getElementById("servicePill");
-const serviceInfo = document.getElementById("serviceInfo");
+const btnEmail = document.getElementById("btnEmail");
+const btnWA = document.getElementById("btnWA");
 
-const weightModal = document.getElementById("weightModal");
+/* =========================
+   CALCUL KM (Nominatim + OSRM)
+========================= */
+let currentKm = null;
+let debounceTimer = null;
 
-/* ==========================
-   3) MODE CLIENT (Régie/Entreprise)
-========================== */
-function updateModeUI(){
-  modeEntreprise.style.display = (mode.value==="entreprise") ? "block" : "none";
-  modeRegie.style.display = (mode.value==="regie") ? "block" : "none";
-}
-mode.addEventListener("change", updateModeUI);
-updateModeUI();
-
-/* ==========================
-   4) INFOS SERVICE
-========================== */
-function updateServiceInfo(){
-  const s = service.value;
-  servicePill.textContent = s.toUpperCase();
-
-  if(s==="normal"){
-    serviceInfo.textContent = "Course standard – prise en charge rapide, livraison selon disponibilité.";
-  }else if(s==="urgent"){
-    serviceInfo.textContent = "Course urgente – priorité immédiate, prise en charge accélérée.";
-  }else{
-    serviceInfo.textContent = "Course express – priorité absolue, enlèvement immédiat, livraison directe sans arrêt.";
-  }
-}
-service.addEventListener("change", ()=>{ updateServiceInfo(); updatePrix(); });
-updateServiceInfo();
-
-/* ==========================
-   5) CALCUL PRIX (AUTO)
-========================== */
-function getKm(){
-  // Priorité : km auto si présent, sinon manuel
-  const autoVal = Number(kmAuto.value);
-  if(autoVal && autoVal>0) return autoVal;
-  const manVal = Number(kmManual.value);
-  if(manVal && manVal>0) return manVal;
-  return null;
+function cleanNPA(v){
+  return (v || "").toString().trim().replace(/\s+/g,"");
 }
 
-function openWeightModal(){ weightModal.style.display="flex"; }
-function closeWeightModal(){ weightModal.style.display="none"; }
-
-function updatePrix(){
-  warningEl.textContent = "";
-  detailEl.textContent = "";
-
-  const km = getKm();
-  const p = Number(poids.value);
-  if(!km || !p) return;
-
-  const coef = coefPoids(p);
-  if(!coef){
-    prixEl.textContent = "DEVIS";
-    warningEl.textContent = "⚠️ Colis > 30 kg – devis spécial requis";
-    openWeightModal();
-    return;
-  }
-
-  const base = baseKm(km, service.value);
-  if(base===null){
-    prixEl.textContent = "DEVIS";
-    warningEl.textContent = "Distance hors grille – devis requis";
-    return;
-  }
-
-  let total = base * coef;
-
-  // nuit/dimanche
-  if(horaire.value==="nuit") total *= 1.25;
-
-  // inter-villes : + 1.20/km
-  if(interville.value==="oui") total += km * 1.20;
-
-  total = arrondir5(total);
-
-  prixEl.textContent = `CHF ${total}.–`;
-  detailEl.textContent = `${km} km • ${p} kg • ${service.value.toUpperCase()} • ${horaire.value==="nuit" ? "NUIT/DIM" : "JOUR"}${interville.value==="oui" ? " • INTER-VILLES" : ""}`;
+async function geocodeNPA(npa){
+  // Nominatim (OpenStreetMap). On limite à la Suisse.
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa + " Switzerland")}`;
+  const r = await fetch(url, { headers: { "Accept": "application/json" }});
+  const d = await r.json();
+  if(!d || !d[0]) return null;
+  return { lon: d[0].lon, lat: d[0].lat };
 }
 
-[poids, nature, kmManual, service, horaire, interville]
-.forEach(el=>el.addEventListener("input", updatePrix));
-
-/* ==========================
-   6) KM AUTO via Codes postaux (Nominatim + OSRM)
-   - Nominatim : convertit CP/Ville -> coordonnées
-   - OSRM : calcule distance route
-========================== */
-async function geocodeCH(zip, city){
-  // Recherche CH : ex "1000 Lausanne, Switzerland"
-  const q = encodeURIComponent(`${zip} ${city || ""} Switzerland`);
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${q}`;
-  const r = await fetch(url, { headers: { "Accept":"application/json" }});
-  const data = await r.json();
-  if(!data || !data[0]) return null;
-  return { lat:Number(data[0].lat), lon:Number(data[0].lon) };
-}
-
-async function routeKm(a,b){
-  // OSRM public : peut être limité parfois
+async function routeKm(a, b){
   const url = `https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`;
-  const r = await fetch(url);
-  const data = await r.json();
-  if(!data || data.code!=="Ok") return null;
-  const meters = data.routes[0].distance;
-  return Math.round((meters/1000)*10)/10; // 0.1 km
+  const r = await fetch(url, { headers: { "Accept": "application/json" }});
+  const d = await r.json();
+  if(!d || !d.routes || !d.routes[0]) return null;
+  return d.routes[0].distance / 1000;
 }
 
-async function calcKmFromZip(){
-  kmStatus.textContent = "Calcul en cours…";
-  kmAuto.value = "";
-  const z1 = pickupZip.value.trim();
-  const z2 = dropZip.value.trim();
-  if(!z1 || !z2){
-    kmStatus.textContent = "Entre les 2 codes postaux pour calculer les km.";
+async function computeKm(){
+  const dep = cleanNPA(npaDepart.value);
+  const arr = cleanNPA(npaArrivee.value);
+
+  currentKm = null;
+  kmInput.value = "";
+  btnEmail.disabled = true;
+  btnWA.disabled = true;
+  prixEl.textContent = "CHF –.–";
+  detailEl.textContent = "";
+  warningEl.textContent = "";
+
+  if(!dep || !arr){
+    kmStatus.textContent = "Entre les deux NPA pour calculer la distance.";
     return;
   }
 
+  kmStatus.textContent = "Calcul distance…";
   try{
-    const a = await geocodeCH(z1, pickupCity.value.trim());
-    const b = await geocodeCH(z2, dropCity.value.trim());
-    if(!a || !b){
-      kmStatus.textContent = "Impossible de trouver une adresse avec ces codes postaux. Utilise le km manuel.";
+    const A = await geocodeNPA(dep);
+    const B = await geocodeNPA(arr);
+    if(!A || !B){
+      kmStatus.textContent = "NPA introuvable. Vérifie les codes postaux.";
+      warningEl.textContent = "Impossible de calculer la distance.";
       return;
     }
-    const km = await routeKm(a,b);
-    if(!km){
-      kmStatus.textContent = "Service km indisponible. Utilise le km manuel.";
+
+    const km = await routeKm(A, B);
+    if(km === null){
+      kmStatus.textContent = "Erreur routeur. Réessaie dans quelques secondes.";
+      warningEl.textContent = "Impossible de calculer la distance.";
       return;
     }
-    kmAuto.value = km;
-    kmStatus.textContent = `KM calculés automatiquement : ${km} km (route).`;
+
+    currentKm = Math.round(km * 10) / 10; // 1 décimale
+    kmInput.value = currentKm;
+    kmStatus.textContent = `Distance calculée : ${currentKm} km`;
     updatePrix();
   }catch(e){
-    kmStatus.textContent = "Erreur réseau km auto. Utilise le km manuel.";
+    kmStatus.textContent = "Erreur réseau. Réessaie.";
+    warningEl.textContent = "Impossible de calculer la distance.";
   }
 }
 
-/* ==========================
-   7) MESSAGE COMMANDE
-========================== */
-function buildOrder(){
-  const km = getKm();
-  const p = Number(poids.value);
-  const prixTxt = prixEl.textContent;
-
-  return {
-    dateISO: new Date().toISOString(),
-    mode: mode.value,
-    societe: societe.value || "",
-    ide: ide.value || "",
-    regieNom: regieNom.value || "",
-    regieRef: regieRef.value || "",
-    regieFactMail: regieFactMail.value || "",
-
-    clientNom: clientNom.value || "",
-    clientTel: clientTel.value || "",
-    clientEmail: clientEmail.value || "",
-
-    pickupAddress: pickupAddress.value || "",
-    pickupZip: pickupZip.value || "",
-    pickupCity: pickupCity.value || "",
-    dropAddress: dropAddress.value || "",
-    dropZip: dropZip.value || "",
-    dropCity: dropCity.value || "",
-
-    kmAuto: kmAuto.value || "",
-    kmManual: kmManual.value || "",
-    km: km || "",
-
-    poids: p || "",
-    nature: nature.value || "",
-
-    service: service.value,
-    horaire: horaire.value,
-    interville: interville.value,
-
-    prix: prixTxt,
-    remarques: remarques.value || ""
-  };
+function debouncedComputeKm(){
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(computeKm, 700);
 }
 
-function validateBasic(){
-  // champs minimum
-  if(!clientNom.value.trim() || !clientTel.value.trim()){
-    alert("Merci de remplir au minimum Nom/Prénom et Téléphone.");
-    return false;
+/* =========================
+   CALCUL PRIX
+========================= */
+function updatePrix(){
+  warningEl.textContent = "";
+
+  const km = Number(kmInput.value);
+  const poids = Number(poidsInput.value);
+  const service = serviceInput.value;
+  const horaire = horaireInput.value;
+  const interville = intervilleInput.value;
+
+  if(!km || !poids){
+    prixEl.textContent = "CHF –.–";
+    detailEl.textContent = "";
+    btnEmail.disabled = true;
+    btnWA.disabled = true;
+    return;
   }
-  if(!pickupZip.value.trim() || !dropZip.value.trim()){
-    alert("Merci de remplir les codes postaux prise en charge et livraison.");
-    return false;
+
+  const rp = reglePoids(poids);
+  if(!rp){
+    prixEl.textContent = "DEVIS";
+    detailEl.textContent = "";
+    warningEl.textContent = "⚠️ Colis > 30 kg – devis spécial requis";
+    btnEmail.disabled = true;
+    btnWA.disabled = true;
+    return;
   }
-  if(!poids.value || Number(poids.value)<=0){
-    alert("Merci d’indiquer le poids du colis.");
-    return false;
+
+  let base = baseKm(km, service);
+  if(base === null){
+    prixEl.textContent = "DEVIS";
+    detailEl.textContent = "";
+    warningEl.textContent = "Distance hors grille – devis requis";
+    btnEmail.disabled = true;
+    btnWA.disabled = true;
+    return;
   }
-  const coef = coefPoids(Number(poids.value));
-  if(coef===null){
-    openWeightModal();
-    return false;
-  }
-  if(!getKm()){
-    alert("KM manquants : calcule automatiquement (bouton) ou indique le km manuel.");
-    return false;
-  }
-  return true;
+
+  let prix = base;
+
+  // Nuit / dimanche
+  if(horaire === "nuit") prix *= 1.25;
+
+  // Intervilles : seulement si >10 km
+  if(interville === "oui" && km > 10) prix += (km * 1.20);
+
+  // Poids
+  prix = prix * rp.coef + rp.sup;
+
+  // Arrondi pro
+  prix = arrondi5_haut(prix);
+
+  prixEl.textContent = `CHF ${prix}.–`;
+  detailEl.textContent = `${km} km · ${poids} kg · ${service.toUpperCase()} · ${horaire === "nuit" ? "NUIT/DIM" : "JOUR"}`;
+
+  // Active l’envoi si minimum client rempli
+  const okClient = (document.getElementById("clientNom").value.trim() !== "" &&
+                    document.getElementById("clientTel").value.trim() !== "");
+  btnEmail.disabled = !okClient;
+  btnWA.disabled = !okClient;
 }
 
-function messageTexte(o){
-  const lines = [];
-  lines.push("Commande – Léman Courses");
-  lines.push("");
-  lines.push(`Date: ${new Date().toLocaleString("fr-CH")}`);
-  lines.push(`Type client: ${o.mode.toUpperCase()}`);
-  if(o.mode==="entreprise"){
-    lines.push(`Entreprise: ${o.societe}`);
-    if(o.ide) lines.push(`IDE/TVA: ${o.ide}`);
-  }
-  if(o.mode==="regie"){
-    lines.push(`Régie: ${o.regieNom}`);
-    lines.push(`Réf: ${o.regieRef}`);
-    if(o.regieFactMail) lines.push(`Mail facturation: ${o.regieFactMail}`);
-  }
-  lines.push("");
-  lines.push(`Client: ${o.clientNom}`);
-  lines.push(`Téléphone: ${o.clientTel}`);
-  if(o.clientEmail) lines.push(`Email: ${o.clientEmail}`);
-  lines.push("");
-  lines.push("PRISE EN CHARGE");
-  lines.push(`Adresse: ${o.pickupAddress}`);
-  lines.push(`CP/Ville: ${o.pickupZip} ${o.pickupCity}`);
-  lines.push("");
-  lines.push("LIVRAISON");
-  lines.push(`Adresse: ${o.dropAddress}`);
-  lines.push(`CP/Ville: ${o.dropZip} ${o.dropCity}`);
-  lines.push("");
-  lines.push(`Distance: ${o.km} km`);
-  lines.push(`Inter-villes: ${o.interville}`);
-  lines.push(`Service: ${o.service}`);
-  lines.push(`Horaire: ${o.horaire}`);
-  lines.push("");
-  lines.push(`Colis: ${o.poids} kg`);
-  lines.push(`Nature: ${o.nature}`);
-  if(o.remarques) lines.push(`Remarques: ${o.remarques}`);
-  lines.push("");
-  lines.push(`Prix estimé: ${o.prix}`);
-  lines.push("");
-  lines.push("Prix indicatif – confirmation avant prise en charge.");
-  return lines.join("\n");
+/* =========================
+   MESSAGE COMMANDE + ENVOI
+========================= */
+function buildMessage(){
+  const clientNom = document.getElementById("clientNom").value.trim();
+  const clientTel = document.getElementById("clientTel").value.trim();
+  const clientEmail = document.getElementById("clientEmail").value.trim();
+  const clientSociete = document.getElementById("clientSociete").value.trim();
+
+  const pickupAdr = document.getElementById("pickupAdr").value.trim();
+  const livAdr = document.getElementById("livAdr").value.trim();
+  const nature = document.getElementById("nature").value.trim();
+  const remarques = document.getElementById("remarques").value.trim();
+
+  const dep = cleanNPA(npaDepart.value);
+  const arr = cleanNPA(npaArrivee.value);
+
+  const km = kmInput.value;
+  const poids = poidsInput.value;
+  const service = serviceInput.value.toUpperCase();
+  const horaire = (horaireInput.value === "nuit") ? "NUIT / DIMANCHE" : "JOUR";
+  const interville = intervilleInput.value.toUpperCase();
+
+  return `COMMANDE – LÉMAN COURSES
+
+CLIENT
+Nom: ${clientNom}
+Téléphone: ${clientTel}
+Email: ${clientEmail || "-"}
+Entreprise: ${clientSociete || "-"}
+
+TRAJET
+NPA départ: ${dep}
+NPA arrivée: ${arr}
+Distance: ${km} km
+
+COLIS
+Poids: ${poids} kg
+Nature: ${nature || "-"}
+
+ADRESSES (optionnel)
+Prise en charge: ${pickupAdr || "-"}
+Livraison: ${livAdr || "-"}
+
+SERVICE
+Type: ${service}
+Horaire: ${horaire}
+Inter-villes: ${interville}
+
+TARIF (indicatif)
+${prixEl.textContent}
+
+REMARQUES
+${remarques || "-"}
+
+Prix indicatif – confirmation avant prise en charge.`;
 }
 
-/* ==========================
-   8) ENVOI EMAIL / WHATSAPP
-   NOTE: mailto ne peut pas joindre un PDF automatiquement.
-   → On fait: Télécharger PDF puis envoyer email.
-========================== */
 function envoyerEmail(){
-  if(!validateBasic()) return;
-  const o = buildOrder();
-
-  const subject = "Commande – Léman Courses";
-  const body = messageTexte(o);
-
-  window.location.href =
-    "mailto:info@leman-courses.ch?subject=" + encodeURIComponent(subject) +
-    "&body=" + encodeURIComponent(body);
+  const clientNom = document.getElementById("clientNom").value.trim();
+  const clientTel = document.getElementById("clientTel").value.trim();
+  if(!clientNom || !clientTel){
+    alert("Merci de renseigner au minimum Nom/Prénom et Téléphone.");
+    return;
+  }
+  const sujet = "Commande – Léman Courses";
+  const corps = buildMessage();
+  const link = "mailto:info@leman-courses.ch"
+    + "?subject=" + encodeURIComponent(sujet)
+    + "&body=" + encodeURIComponent(corps);
+  window.location.href = link;
 }
 
 function envoyerWhatsapp(){
-  if(!validateBasic()) return;
-  const o = buildOrder();
-  window.open("https://wa.me/?text=" + encodeURIComponent(messageTexte(o)), "_blank");
-}
-
-/* ==========================
-   9) PDF DEVIS (jsPDF)
-========================== */
-function telechargerPDF(){
-  if(!validateBasic()) return;
-  const o = buildOrder();
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  const date = new Date().toLocaleDateString("fr-CH");
-  const time = new Date().toLocaleTimeString("fr-CH").slice(0,5);
-
-  doc.setFontSize(16);
-  doc.text("DEVIS – LÉMAN COURSES", 20, 20);
-  doc.setFontSize(11);
-  doc.text(`Date: ${date}  ${time}`, 20, 30);
-
-  doc.line(20, 34, 190, 34);
-
-  let y = 44;
-  const add = (label, value) => { doc.text(`${label} : ${value}`, 20, y); y += 8; };
-
-  add("Client", o.clientNom);
-  add("Téléphone", o.clientTel);
-  if(o.mode==="entreprise") add("Entreprise", o.societe || "-");
-  if(o.mode==="regie"){ add("Régie", o.regieNom || "-"); add("Référence", o.regieRef || "-"); }
-
-  y += 4;
-  doc.line(20, y, 190, y); y += 10;
-
-  add("Prise en charge", `${o.pickupAddress} – ${o.pickupZip} ${o.pickupCity}`);
-  add("Livraison", `${o.dropAddress} – ${o.dropZip} ${o.dropCity}`);
-  add("Distance", `${o.km} km`);
-  add("Service", `${o.service.toUpperCase()} / ${o.horaire.toUpperCase()} / ${o.interville.toUpperCase()}`);
-  add("Colis", `${o.poids} kg – ${o.nature}`);
-
-  y += 6;
-  doc.line(20, y, 190, y); y += 12;
-
-  doc.setFontSize(14);
-  doc.text(`TOTAL ESTIMÉ : ${o.prix}`, 20, y);
-  y += 10;
-
-  doc.setFontSize(10);
-  doc.text("Prix indicatif – confirmation avant prise en charge.", 20, y);
-  y += 10;
-  doc.text("Contact: info@leman-courses.ch", 20, y);
-
-  const fileName = `Devis_Leman_Courses_${date.replace(/\./g,"-")}_${time.replace(":","")}.pdf`;
-  doc.save(fileName);
-}
-
-/* ==========================
-   10) SAUVEGARDE (localStorage)
-========================== */
-const LS_KEY = "leman_courses_orders_v1";
-
-function loadSaved(){
-  try{
-    return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
-  }catch(e){
-    return [];
-  }
-}
-function saveAll(list){
-  localStorage.setItem(LS_KEY, JSON.stringify(list));
-  renderSaved();
-}
-
-function sauverCommande(){
-  if(!validateBasic()) return;
-  const o = buildOrder();
-  const list = loadSaved();
-  list.unshift(o);
-  saveAll(list);
-  alert("Commande sauvegardée ✅");
-}
-
-function clearSaved(){
-  if(!confirm("Supprimer toutes les commandes sauvegardées ?")) return;
-  localStorage.removeItem(LS_KEY);
-  renderSaved();
-}
-
-function exportCSV(){
-  const list = loadSaved();
-  if(!list.length){ alert("Aucune commande sauvegardée."); return; }
-
-  const cols = [
-    "dateISO","mode","societe","ide","regieNom","regieRef","regieFactMail",
-    "clientNom","clientTel","clientEmail",
-    "pickupAddress","pickupZip","pickupCity","dropAddress","dropZip","dropCity",
-    "km","poids","nature","service","horaire","interville","prix","remarques"
-  ];
-
-  const escapeCSV = (v) => `"${String(v ?? "").replace(/"/g,'""')}"`;
-  const rows = [cols.join(",")].concat(
-    list.map(o => cols.map(c => escapeCSV(o[c])).join(","))
-  );
-  const blob = new Blob([rows.join("\n")], { type:"text/csv;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "leman_courses_commandes.csv";
-  a.click();
-}
-
-function renderSaved(){
-  const el = document.getElementById("savedList");
-  const list = loadSaved();
-  if(!list.length){
-    el.innerHTML = `<div style="color:#666;font-size:12px;">Aucune commande sauvegardée pour l’instant.</div>`;
+  const clientNom = document.getElementById("clientNom").value.trim();
+  const clientTel = document.getElementById("clientTel").value.trim();
+  if(!clientNom || !clientTel){
+    alert("Merci de renseigner au minimum Nom/Prénom et Téléphone.");
     return;
   }
-
-  el.innerHTML = list.map((o, idx) => {
-    const d = new Date(o.dateISO);
-    const when = d.toLocaleString("fr-CH");
-    return `
-      <div class="savedItem">
-        <div class="savedTop">
-          <div>
-            <b>${o.clientNom || "Sans nom"}</b> • ${when}<br/>
-            <span style="color:#333;font-size:12px;">
-              ${o.km || "?"} km • ${o.poids || "?"} kg • ${String(o.service||"").toUpperCase()} • ${o.prix || ""}
-            </span>
-          </div>
-          <div class="savedBtns">
-            <button class="miniBtn blue" onclick="reuseSaved(${idx})">Recharger</button>
-            <button class="miniBtn dark" onclick="emailSaved(${idx})">Email</button>
-            <button class="miniBtn green" onclick="waSaved(${idx})">WhatsApp</button>
-            <button class="miniBtn red" onclick="delSaved(${idx})">Suppr</button>
-          </div>
-        </div>
-        <div style="font-size:12px;color:#444;">
-          ${o.pickupZip} → ${o.dropZip} • ${o.nature || ""} ${o.remarques ? "• " + o.remarques : ""}
-        </div>
-      </div>
-    `;
-  }).join("");
+  const text = buildMessage();
+  window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
 }
 
-function delSaved(i){
-  const list = loadSaved();
-  list.splice(i,1);
-  saveAll(list);
-}
+/* =========================
+   ÉVÉNEMENTS
+========================= */
+npaDepart.addEventListener("input", debouncedComputeKm);
+npaArrivee.addEventListener("input", debouncedComputeKm);
 
-function reuseSaved(i){
-  const o = loadSaved()[i];
-  if(!o) return;
+[poidsInput, intervilleInput, serviceInput, horaireInput].forEach(el=>{
+  el.addEventListener("input", updatePrix);
+});
 
-  mode.value = o.mode || "particulier";
-  updateModeUI();
-
-  societe.value = o.societe || "";
-  ide.value = o.ide || "";
-  regieNom.value = o.regieNom || "";
-  regieRef.value = o.regieRef || "";
-  regieFactMail.value = o.regieFactMail || "";
-
-  clientNom.value = o.clientNom || "";
-  clientTel.value = o.clientTel || "";
-  clientEmail.value = o.clientEmail || "";
-  remarques.value = o.remarques || "";
-
-  pickupAddress.value = o.pickupAddress || "";
-  pickupZip.value = o.pickupZip || "";
-  pickupCity.value = o.pickupCity || "";
-  dropAddress.value = o.dropAddress || "";
-  dropZip.value = o.dropZip || "";
-  dropCity.value = o.dropCity || "";
-
-  kmAuto.value = o.kmAuto || "";
-  kmManual.value = o.kmManual || "";
-  poids.value = o.poids || "";
-  nature.value = o.nature || "";
-
-  service.value = o.service || "normal";
-  horaire.value = o.horaire || "jour";
-  interville.value = o.interville || "non";
-
-  updateServiceInfo();
-  updatePrix();
-}
-
-function emailSaved(i){
-  const o = loadSaved()[i];
-  if(!o) return;
-  window.location.href =
-    "mailto:info@leman-courses.ch?subject=" + encodeURIComponent("Commande – Léman Courses") +
-    "&body=" + encodeURIComponent(messageTexte(o));
-}
-function waSaved(i){
-  const o = loadSaved()[i];
-  if(!o) return;
-  window.open("https://wa.me/?text=" + encodeURIComponent(messageTexte(o)), "_blank");
-}
-
-/* ==========================
-   11) INIT
-========================== */
-renderSaved();
-updatePrix();
+document.getElementById("clientNom").addEventListener("input", updatePrix);
+document.getElementById("clientTel").addEventListener("input", updatePrix);
 </script>
 
 </body>
