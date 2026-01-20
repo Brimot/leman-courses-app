@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>LÉMAN COURSES – Commande</title>
+<title>LÉMAN COURSES – Commande transport</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -14,14 +13,16 @@ body{
   padding:20px;
 }
 .card{
-  max-width:520px;
+  max-width:600px;
   margin:auto;
   background:#fff;
   color:#000;
   border-radius:16px;
   padding:20px;
+  box-shadow:0 15px 40px rgba(0,0,0,.3);
 }
-h1{text-align:center;color:#0b2a44;}
+h1{text-align:center;color:#0b2a44;margin-top:0;}
+.section{margin-top:20px;border-top:1px solid #ddd;padding-top:15px;}
 label{font-weight:bold;font-size:13px;}
 input,select,button{
   width:100%;
@@ -36,10 +37,11 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
+button:disabled{background:#999;}
 .price{
-  font-size:28px;
+  font-size:30px;
   text-align:center;
-  margin:15px 0;
+  margin:20px 0;
   color:#0b2a44;
 }
 .info{
@@ -48,11 +50,7 @@ button{
   padding:10px;
   border-radius:8px;
 }
-.section{
-  margin-top:15px;
-  border-top:1px solid #ddd;
-  padding-top:15px;
-}
+.small{font-size:11px;color:#555;text-align:center;margin-top:10px;}
 </style>
 </head>
 
@@ -64,28 +62,28 @@ button{
 <!-- CODES POSTAUX -->
 <div class="section">
 <label>NPA prise en charge</label>
-<input id="cpStart" placeholder="Ex: 1000">
+<input id="cpStart" placeholder="Ex : 1000 Lausanne">
 
 <label>NPA livraison</label>
-<input id="cpEnd" placeholder="Ex: 1200">
+<input id="cpEnd" placeholder="Ex : 1200 Genève">
 </div>
 
 <!-- OPTIONS -->
 <div class="section">
 <label>Poids du colis (kg)</label>
-<input type="number" id="poids" min="1">
+<input type="number" id="poids" min="1" placeholder="Max 30 kg">
 
-<label>Service</label>
+<label>Type de service</label>
 <select id="service">
-<option value="normal">Normal</option>
-<option value="urgent">Urgent</option>
-<option value="express">Express</option>
+  <option value="normal">Normal</option>
+  <option value="urgent">Urgent</option>
+  <option value="express">Express</option>
 </select>
 
 <label>Période</label>
 <select id="horaire">
-<option value="jour">Jour</option>
-<option value="nuit">Nuit / Dimanche</option>
+  <option value="jour">Jour</option>
+  <option value="nuit">Nuit / Dimanche</option>
 </select>
 
 <button onclick="calculer()">Calculer le tarif</button>
@@ -94,9 +92,9 @@ button{
 <div class="price" id="result">CHF —</div>
 <div class="info" id="detail"></div>
 
-<!-- FORMULAIRE CLIENT -->
+<!-- CLIENT -->
 <div class="section">
-<h3>📦 Données client</h3>
+<h3>📦 Client</h3>
 
 <label>Nom / Prénom</label>
 <input id="clientNom">
@@ -106,7 +104,10 @@ button{
 
 <label>Adresse prise en charge</label>
 <input id="pickupAdr">
+</div>
 
+<!-- LIVRAISON -->
+<div class="section">
 <h3>📍 Livraison</h3>
 
 <label>Nom / Prénom</label>
@@ -121,10 +122,14 @@ button{
 <button id="sendBtn" disabled>Envoyer la commande</button>
 </div>
 
+<p class="small">
+Prix indicatif – confirmation avant la prise en charge du colis
+</p>
+
 </div>
 
 <script>
-// ===== RÉFÉRENCES DOM =====
+// ===== RÉFÉRENCES =====
 const cpStart = document.getElementById("cpStart");
 const cpEnd = document.getElementById("cpEnd");
 const poidsInput = document.getElementById("poids");
@@ -134,23 +139,23 @@ const result = document.getElementById("result");
 const detail = document.getElementById("detail");
 const sendBtn = document.getElementById("sendBtn");
 
-// ===== GRILLE TARIFAIRE =====
+// ===== GRILLE TARIFAIRE KM (INTERNE) =====
 const grille = [
-  {min:0,max:10,normal:6.5,urgent:43,express:30},
-  {min:11,max:30,normal:10,urgent:73,express:48},
-  {min:31,max:80,normal:13.5,urgent:103,express:66},
-  {min:81,max:150,normal:17,urgent:133,express:84},
-  {min:151,max:250,normal:20.5,urgent:163,express:102},
-  {min:251,max:500,normal:38,urgent:313,express:192},
-  {min:501,max:1500,normal:108,urgent:913,express:552}
+  {min:0,max:10,normal:45,urgent:65,express:85},
+  {min:11,max:30,normal:65,urgent:95,express:125},
+  {min:31,max:80,normal:85,urgent:125,express:165},
+  {min:81,max:150,normal:105,urgent:155,express:205},
+  {min:151,max:300,normal:135,urgent:195,express:255},
+  {min:301,max:600,normal:175,urgent:255,express:335},
+  {min:601,max:1500,normal:215,urgent:315,express:415}
 ];
 
-// ===== COEFFICIENT POIDS =====
-function coefPoids(p){
-  if(p <= 5) return 1;
-  if(p <= 10) return 1.1;
-  if(p <= 20) return 1.25;
-  if(p <= 30) return 1.4;
+// ===== RÈGLE POIDS (COEF + SUPPLÉMENT) =====
+function reglePoids(p){
+  if(p <= 5)  return {coef:1.00, sup:0};
+  if(p <= 10) return {coef:1.10, sup:5};
+  if(p <= 20) return {coef:1.25, sup:10};
+  if(p <= 30) return {coef:1.40, sup:20};
   return null;
 }
 
@@ -158,7 +163,7 @@ function coefPoids(p){
 async function getKm(cp1, cp2){
   const geo = async cp => {
     const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${cp},Switzerland`
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(cp)},Switzerland`
     );
     const d = await r.json();
     return d[0] ? [d[0].lon, d[0].lat] : null;
@@ -182,7 +187,7 @@ async function calculer(){
   const horaire = horaireSelect.value;
 
   if(!cpStart.value || !cpEnd.value || !poids){
-    alert("Veuillez remplir les champs nécessaires");
+    alert("Merci de compléter les champs nécessaires");
     return;
   }
 
@@ -197,7 +202,7 @@ async function calculer(){
 
   const km = await getKm(cpStart.value, cpEnd.value);
   if(km === null){
-    result.textContent = "Erreur de calcul km";
+    result.textContent = "Erreur calcul distance";
     return;
   }
 
@@ -208,12 +213,15 @@ async function calculer(){
   }
 
   let prix = ligne[service];
+
   if(horaire === "nuit") prix *= 1.25;
 
-  prix *= coefPoids(poids);
-  prix = Math.round(prix / 5) * 5;
+  const rPoids = reglePoids(poids);
+  prix = prix * rPoids.coef + rPoids.sup;
 
-  result.textContent = `CHF ${prix}.-`;
+  prix = Math.ceil(prix / 5) * 5;
+
+  result.textContent = `CHF ${prix}.–`;
   detail.textContent = `Distance : ${km} km · ${service.toUpperCase()} · ${poids} kg`;
 
   sendBtn.disabled = false;
