@@ -73,7 +73,7 @@ button{
 <!-- OPTIONS -->
 <div class="section">
 <label>Poids du colis (kg)</label>
-<input type="number" id="poids">
+<input type="number" id="poids" min="1">
 
 <label>Service</label>
 <select id="service">
@@ -88,7 +88,7 @@ button{
 <option value="nuit">Nuit / Dimanche</option>
 </select>
 
-<button onclick="calculate()">Calculer le tarif</button>
+<button onclick="calculer()">Calculer le tarif</button>
 </div>
 
 <div class="price" id="result">CHF —</div>
@@ -104,15 +104,15 @@ button{
 <label>Téléphone</label>
 <input id="clientTel">
 
-<label>Adresse complète</label>
-<input id="clientAdr">
+<label>Adresse prise en charge</label>
+<input id="pickupAdr">
 
 <h3>📍 Livraison</h3>
 
 <label>Nom / Prénom</label>
 <input id="livNom">
 
-<label>Adresse complète</label>
+<label>Adresse livraison</label>
 <input id="livAdr">
 
 <label>Nature du colis</label>
@@ -124,63 +124,99 @@ button{
 </div>
 
 <script>
-// GRILLE TARIFAIRE
-const grille=[
-{min:0,max:10,normal:6.5,urgent:43,express:30},
-{min:11,max:30,normal:10,urgent:73,express:48},
-{min:31,max:80,normal:13.5,urgent:103,express:66},
-{min:81,max:150,normal:17,urgent:133,express:84},
-{min:151,max:250,normal:20.5,urgent:163,express:102},
-{min:251,max:500,normal:38,urgent:313,express:192},
-{min:501,max:1500,normal:108,urgent:913,express:552}
+// ===== RÉFÉRENCES DOM =====
+const cpStart = document.getElementById("cpStart");
+const cpEnd = document.getElementById("cpEnd");
+const poidsInput = document.getElementById("poids");
+const serviceSelect = document.getElementById("service");
+const horaireSelect = document.getElementById("horaire");
+const result = document.getElementById("result");
+const detail = document.getElementById("detail");
+const sendBtn = document.getElementById("sendBtn");
+
+// ===== GRILLE TARIFAIRE =====
+const grille = [
+  {min:0,max:10,normal:6.5,urgent:43,express:30},
+  {min:11,max:30,normal:10,urgent:73,express:48},
+  {min:31,max:80,normal:13.5,urgent:103,express:66},
+  {min:81,max:150,normal:17,urgent:133,express:84},
+  {min:151,max:250,normal:20.5,urgent:163,express:102},
+  {min:251,max:500,normal:38,urgent:313,express:192},
+  {min:501,max:1500,normal:108,urgent:913,express:552}
 ];
 
+// ===== COEFFICIENT POIDS =====
 function coefPoids(p){
-if(p<=5) return 1;
-if(p<=10) return 1.1;
-if(p<=20) return 1.25;
-if(p<=30) return 1.4;
-return null;
+  if(p <= 5) return 1;
+  if(p <= 10) return 1.1;
+  if(p <= 20) return 1.25;
+  if(p <= 30) return 1.4;
+  return null;
 }
 
-// CALCUL DISTANCE VIA OSRM
-async function getKm(cp1,cp2){
-const geo = async cp =>{
-const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cp},Switzerland`);
-const d=await r.json();
-return [d[0].lon,d[0].lat];
-};
-const a=await geo(cp1);
-const b=await geo(cp2);
-const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a[0]},${a[1]};${b[0]},${b[1]}?overview=false`);
-const d=await r.json();
-return d.routes[0].distance/1000;
+// ===== CALCUL DISTANCE (OSM) =====
+async function getKm(cp1, cp2){
+  const geo = async cp => {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${cp},Switzerland`
+    );
+    const d = await r.json();
+    return d[0] ? [d[0].lon, d[0].lat] : null;
+  };
+
+  const A = await geo(cp1);
+  const B = await geo(cp2);
+  if(!A || !B) return null;
+
+  const r = await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`
+  );
+  const d = await r.json();
+  return Math.round(d.routes[0].distance / 1000);
 }
 
-async function calculate(){
-const cp1=cpStart.value;
-const cp2=cpEnd.value;
-const poids=Number(poidsInput=poids.value);
-const service=serviceSelect=service.value;
-const horaire=horaireSelect=horaire.value;
+// ===== CALCUL TARIF =====
+async function calculer(){
+  const poids = Number(poidsInput.value);
+  const service = serviceSelect.value;
+  const horaire = horaireSelect.value;
 
-if(poids>30){
-alert("Colis > 30 kg : devis spécial requis");
-return;
-}
+  if(!cpStart.value || !cpEnd.value || !poids){
+    alert("Veuillez remplir les champs nécessaires");
+    return;
+  }
 
-const km=Math.round(await getKm(cp1,cp2));
-const row=grille.find(g=>km>=g.min && km<=g.max);
-if(!row){result.textContent="Devis requis";return;}
+  if(poids > 30){
+    alert("⚠️ Colis > 30 kg : devis spécial requis");
+    result.textContent = "Devis requis";
+    sendBtn.disabled = true;
+    return;
+  }
 
-let prix=row[service];
-if(horaire==="nuit") prix*=1.25;
-prix*=coefPoids(poids);
-prix=Math.round(prix/5)*5;
+  result.textContent = "Calcul en cours…";
 
-result.textContent=`CHF ${prix}.-`;
-detail.textContent=`Distance ${km} km | ${service.toUpperCase()} | ${poids} kg`;
-sendBtn.disabled=false;
+  const km = await getKm(cpStart.value, cpEnd.value);
+  if(km === null){
+    result.textContent = "Erreur de calcul km";
+    return;
+  }
+
+  const ligne = grille.find(g => km >= g.min && km <= g.max);
+  if(!ligne){
+    result.textContent = "Distance hors grille";
+    return;
+  }
+
+  let prix = ligne[service];
+  if(horaire === "nuit") prix *= 1.25;
+
+  prix *= coefPoids(poids);
+  prix = Math.round(prix / 5) * 5;
+
+  result.textContent = `CHF ${prix}.-`;
+  detail.textContent = `Distance : ${km} km · ${service.toUpperCase()} · ${poids} kg`;
+
+  sendBtn.disabled = false;
 }
 </script>
 
