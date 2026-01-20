@@ -77,54 +77,29 @@ button:disabled{opacity:.5}
 <label>Téléphone</label>
 <input id="clientTel">
 
-<label>Email (optionnel)</label>
-<input id="clientEmail">
-
-<label>Nature du colis</label>
-<select id="colisNature">
-  <option>Documents</option>
-  <option>Colis</option>
-  <option>Fragile</option>
-  <option>Médical</option>
-</select>
-
-<label>Poids (kg)</label>
-<input id="colisPoids" type="number" step="0.1">
-
 <hr>
 
 <h3>Prise en charge</h3>
-
-<label>Entreprise (prise en charge)</label>
+<label>Entreprise</label>
 <input id="pickupEntreprise">
-
 <label>Adresse</label>
 <input id="pickupAdresse">
-
 <label>NPA</label>
 <input id="pickupNPA">
-
 <label>Ville</label>
 <input id="pickupVille">
 
 <hr>
 
 <h3>Livraison</h3>
-
-<label>Entreprise (livraison)</label>
+<label>Entreprise</label>
 <input id="dropEntreprise">
-
 <label>Adresse</label>
 <input id="dropAdresse">
-
 <label>NPA</label>
 <input id="dropNPA">
-
 <label>Ville</label>
 <input id="dropVille">
-
-<label>Remarques</label>
-<textarea id="remarques"></textarea>
 </div>
 
 <!-- TARIF -->
@@ -145,122 +120,85 @@ button:disabled{opacity:.5}
   <option value="1.3">Dimanche / férié</option>
 </select>
 
-<label>Kilomètres (calcul automatique)</label>
+<label>Kilomètres</label>
 <input id="km" disabled>
 
 <div class="status" id="kmStatus">En attente des adresses…</div>
 
 <div class="price" id="resultat">CHF 0.–</div>
 <div class="note" id="detail"></div>
-
-<button id="sendBtn" disabled>Envoyer la commande (email)</button>
 </div>
 
 </div>
 </div>
 
 <script>
-const DISPATCH_EMAIL = "TONEMAIL@lemancourses.ch"; // ⬅️ À modifier
+let currentKm = 0;
+let kmReady = false;
 
-function round5(v){return Math.round(v/5)*5}
+function round5(v){ return Math.round(v/5)*5 }
 
-async function geocode(q){
-  const u=`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(q)}`;
-  const r=await fetch(u);const d=await r.json();
-  if(!d[0]) return null;
-  return {lat:d[0].lat,lon:d[0].lon}
+// 🔹 CALCUL PRIX (TOUJOURS EXÉCUTÉ)
+function updatePrice(){
+  let base = 35;
+  let kmPrice = 0;
+
+  if(currentKm > 10){
+    base = 65;
+    kmPrice = currentKm * 1.2;
+    detail.textContent = `Inter-villes · ${currentKm} km × 1.20 CHF`;
+  }else{
+    detail.textContent = `Course locale (≤ 10 km)`;
+  }
+
+  let prix = (base + kmPrice) * (1 + urgence.value/100) * horaire.value;
+  prix = round5(prix);
+
+  resultat.textContent = `CHF ${prix}.–`;
 }
 
-async function distance(a,b){
-  const u=`https://router.project-osrm.org/route/v1/driving/${a.lon},${a.lat};${b.lon},${b.lat}?overview=false`;
-  const r=await fetch(u);const d=await r.json();
-  return d.routes[0].distance/1000;
-}
-
-let lastKm = null;
-
-// 🔹 Calcul distance UNIQUEMENT quand adresses changent
+// 🔹 CALCUL KM (SEULEMENT ADRESSES)
 async function computeKm(){
   if(!pickupVille.value || !dropVille.value) return;
 
-  kmStatus.textContent="Calcul de la distance…";
-  const q1=`${pickupAdresse.value}, ${pickupNPA.value} ${pickupVille.value}, Suisse`;
-  const q2=`${dropAdresse.value}, ${dropNPA.value} ${dropVille.value}, Suisse`;
+  kmStatus.textContent = "Calcul de la distance…";
 
-  const A=await geocode(q1);
-  const B=await geocode(q2);
-  if(!A||!B){kmStatus.textContent="Adresse invalide";return}
+  const q1 = `${pickupAdresse.value}, ${pickupNPA.value} ${pickupVille.value}, Suisse`;
+  const q2 = `${dropAdresse.value}, ${dropNPA.value} ${dropVille.value}, Suisse`;
 
-  lastKm=Math.round((await distance(A,B))*10)/10;
-  km.value=lastKm;
-  kmStatus.textContent=`Distance calculée : ${lastKm} km`;
+  const geo = async q => {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(q)}`);
+    const d = await r.json();
+    return d[0] ? {lat:d[0].lat,lon:d[0].lon} : null;
+  };
 
-  updatePrice(); // recalcul prix après km
-}
-
-// 🔹 Calcul PRIX (appelé aussi par nuit / dimanche / urgence)
-function updatePrice(){
-  if(lastKm===null) return;
-
-  let base,kmPrice;
-  if(lastKm>10){
-    base=65;
-    kmPrice=lastKm*1.2;
-    detail.textContent=`Inter-villes · ${lastKm} km × 1.20 CHF`;
-  }else{
-    base=35;
-    kmPrice=0;
-    detail.textContent=`Course locale (≤ 10 km)`;
+  const A = await geo(q1);
+  const B = await geo(q2);
+  if(!A || !B){
+    kmStatus.textContent = "Adresse invalide";
+    return;
   }
 
-  let prix=(base+kmPrice)*(1+urgence.value/100)*horaire.value;
-  prix=round5(prix);
+  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lon},${A.lat};${B.lon},${B.lat}?overview=false`);
+  const d = await r.json();
 
-  resultat.textContent=`CHF ${prix}.–`;
-  sendBtn.disabled=false;
+  currentKm = Math.round((d.routes[0].distance / 1000) * 10) / 10;
+  km.value = currentKm;
+
+  kmStatus.textContent = `Distance calculée : ${currentKm} km`;
+
+  updatePrice(); // 🔥 recalcul FORCÉ après km
 }
 
-// 🔹 Événements ADRESSES → recalcul km
+// 🔹 LISTENERS
 ["pickupAdresse","pickupNPA","pickupVille","dropAdresse","dropNPA","dropVille"]
-.forEach(id=>{
-  document.getElementById(id).addEventListener("input",()=>setTimeout(computeKm,800));
-});
+.forEach(id => document.getElementById(id).addEventListener("input", () => {
+  setTimeout(computeKm, 800);
+}));
 
-// 🔹 Événements TARIF → recalcul prix immédiat
-["urgence","horaire"].forEach(id=>{
-  document.getElementById(id).addEventListener("change", updatePrice);
-});
-
-sendBtn.onclick=()=>{
-  const body=`
-COMMANDE LÉMAN COURSES
-
-Client : ${clientNom.value}
-Téléphone : ${clientTel.value}
-Email : ${clientEmail.value}
-
-PRISE EN CHARGE
-Entreprise : ${pickupEntreprise.value}
-${pickupAdresse.value}
-${pickupNPA.value} ${pickupVille.value}
-
-LIVRAISON
-Entreprise : ${dropEntreprise.value}
-${dropAdresse.value}
-${dropNPA.value} ${dropVille.value}
-
-Colis : ${colisNature.value}
-Poids : ${colisPoids.value} kg
-
-Distance : ${lastKm} km
-Prix estimé : ${resultat.textContent}
-
-Remarques :
-${remarques.value}
-`;
-
-  location.href=`mailto:${DISPATCH_EMAIL}?subject=Commande Léman Courses&body=${encodeURIComponent(body)}`;
-};
+["urgence","horaire"].forEach(id =>
+  document.getElementById(id).addEventListener("change", updatePrice)
+);
 </script>
 </body>
 </html>
