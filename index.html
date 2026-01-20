@@ -145,7 +145,7 @@ button:disabled{opacity:.5}
   <option value="1.3">Dimanche / férié</option>
 </select>
 
-<label>Kilomètres (auto)</label>
+<label>Kilomètres (calcul automatique)</label>
 <input id="km" disabled>
 
 <div class="status" id="kmStatus">En attente des adresses…</div>
@@ -160,7 +160,7 @@ button:disabled{opacity:.5}
 </div>
 
 <script>
-const DISPATCH_EMAIL = "TONEMAIL@lemancourses.ch";
+const DISPATCH_EMAIL = "TONEMAIL@lemancourses.ch"; // ⬅️ À modifier
 
 function round5(v){return Math.round(v/5)*5}
 
@@ -177,43 +177,58 @@ async function distance(a,b){
   return d.routes[0].distance/1000;
 }
 
-async function compute(){
-  const q1=`${pickupAdresse.value}, ${pickupNPA.value} ${pickupVille.value}, Suisse`;
-  const q2=`${dropAdresse.value}, ${dropNPA.value} ${dropVille.value}, Suisse`;
+let lastKm = null;
 
+// 🔹 Calcul distance UNIQUEMENT quand adresses changent
+async function computeKm(){
   if(!pickupVille.value || !dropVille.value) return;
 
   kmStatus.textContent="Calcul de la distance…";
+  const q1=`${pickupAdresse.value}, ${pickupNPA.value} ${pickupVille.value}, Suisse`;
+  const q2=`${dropAdresse.value}, ${dropNPA.value} ${dropVille.value}, Suisse`;
+
   const A=await geocode(q1);
   const B=await geocode(q2);
   if(!A||!B){kmStatus.textContent="Adresse invalide";return}
 
-  const kmVal=Math.round((await distance(A,B))*10)/10;
-  km.value=kmVal;
+  lastKm=Math.round((await distance(A,B))*10)/10;
+  km.value=lastKm;
+  kmStatus.textContent=`Distance calculée : ${lastKm} km`;
+
+  updatePrice(); // recalcul prix après km
+}
+
+// 🔹 Calcul PRIX (appelé aussi par nuit / dimanche / urgence)
+function updatePrice(){
+  if(lastKm===null) return;
 
   let base,kmPrice;
-  if(kmVal>10){
+  if(lastKm>10){
     base=65;
-    kmPrice=kmVal*1.2;
+    kmPrice=lastKm*1.2;
+    detail.textContent=`Inter-villes · ${lastKm} km × 1.20 CHF`;
   }else{
     base=35;
     kmPrice=0;
+    detail.textContent=`Course locale (≤ 10 km)`;
   }
 
   let prix=(base+kmPrice)*(1+urgence.value/100)*horaire.value;
   prix=round5(prix);
 
   resultat.textContent=`CHF ${prix}.–`;
-  detail.textContent = kmVal>10
-    ? `Inter-villes · ${kmVal} km × 1.20 CHF`
-    : `Course locale`;
-
-  kmStatus.textContent=`Distance calculée : ${kmVal} km`;
   sendBtn.disabled=false;
 }
 
-["pickupAdresse","pickupNPA","pickupVille","dropAdresse","dropNPA","dropVille"].forEach(id=>{
-  document.getElementById(id).addEventListener("input",()=>setTimeout(compute,800))
+// 🔹 Événements ADRESSES → recalcul km
+["pickupAdresse","pickupNPA","pickupVille","dropAdresse","dropNPA","dropVille"]
+.forEach(id=>{
+  document.getElementById(id).addEventListener("input",()=>setTimeout(computeKm,800));
+});
+
+// 🔹 Événements TARIF → recalcul prix immédiat
+["urgence","horaire"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", updatePrice);
 });
 
 sendBtn.onclick=()=>{
@@ -237,7 +252,7 @@ ${dropNPA.value} ${dropVille.value}
 Colis : ${colisNature.value}
 Poids : ${colisPoids.value} kg
 
-Distance : ${km.value} km
+Distance : ${lastKm} km
 Prix estimé : ${resultat.textContent}
 
 Remarques :
