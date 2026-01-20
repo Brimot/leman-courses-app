@@ -1,6 +1,10 @@
 
 <!DOCTYPE html>
 <html lang="fr">
+  
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B2A44">
+
 <head>
   <meta charset="UTF-8">
   <title>Léman Courses – Calculateur express</title>
@@ -90,6 +94,15 @@
     }
   </style>
 </head>
+
+  <script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js")
+    .then(() => console.log("Service Worker enregistré"))
+    .catch(err => console.error("SW error:", err));
+}
+</script>
+
 
 <body>
 
