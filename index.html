@@ -121,6 +121,37 @@ button:hover{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const { jsPDF } = window.jspdf;
+  
+<hr style="margin:30px 0">
+
+<h2 style="text-align:center;color:#0b2a44">
+Abonnements professionnels
+</h2>
+
+<p style="text-align:center;color:#444;font-size:13px">
+Pour hôtels, EMS, foyers et entreprises
+</p>
+
+<select id="aboType">
+  <option value="0">— Choisir une formule —</option>
+  <option value="120">ESSENTIEL – CHF 120 / mois</option>
+  <option value="220">CONFORT – CHF 220 / mois</option>
+  <option value="390">PREMIUM – CHF 390 / mois</option>
+</select>
+
+<select id="aboEtab">
+  <option value="1">Petit établissement</option>
+  <option value="1.2">Moyen établissement</option>
+  <option value="1.4">Grand établissement</option>
+</select>
+
+<div class="price" id="aboPrix">—</div>
+
+<div class="details" id="aboDetails"></div>
+
+<button onclick="genererAboPDF()">
+Générer devis abonnement PDF
+</button>
 
 function calculer(){
   const base = parseFloat(type.value);
@@ -207,6 +238,64 @@ calculer();
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("./sw.js");
 }
+  <script>
+function calculerAbo(){
+  const base = parseFloat(document.getElementById("aboType").value);
+  const taille = parseFloat(document.getElementById("aboEtab").value);
+
+  if(base === 0){
+    aboPrix.innerText = "—";
+    aboDetails.innerHTML = "";
+    return null;
+  }
+
+  const prix = Math.round(base * taille / 5) * 5;
+
+  const prestations = {
+    120: "• 1 course/mois\n• Priorité standard\n• Support heures ouvrables",
+    220: "• 3 courses/mois\n• Priorité 24h/24\n• Nuit incluse\n• Support direct",
+    390: "• Courses illimitées*\n• Priorité absolue\n• Nuit & dimanche inclus\n• Hotline dédiée"
+  };
+
+  aboPrix.innerText = "CHF " + prix + ".– / mois";
+  aboDetails.innerText = prestations[base];
+
+  return { base, taille, prix };
+}
+
+function genererAboPDF(){
+  const d = calculerAbo();
+  if(!d) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const date = new Date().toLocaleDateString("fr-CH");
+
+  doc.setFontSize(16);
+  doc.text("DEVIS ABONNEMENT – LÉMAN COURSES",20,20);
+
+  doc.setFontSize(11);
+  doc.text(`Date : ${date}`,20,30);
+  doc.text(`Formule : CHF ${d.base} / mois`,20,45);
+  doc.text(`Taille établissement : x${d.taille}`,20,55);
+
+  doc.setFontSize(14);
+  doc.text(`TOTAL : CHF ${d.prix}.– / mois`,20,80);
+
+  doc.setFontSize(10);
+  doc.text(
+    "Abonnement sans engagement long.\nRésiliable avec préavis.\nLéman Courses – Transport express 24h/24 – 7j/7",
+    20,100
+  );
+
+  doc.save("Devis_Abonnement_Leman_Courses.pdf");
+}
+
+["aboType","aboEtab"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",calculerAbo);
+});
+</script>
+
 </script>
 
 </body>
