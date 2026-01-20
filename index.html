@@ -2,152 +2,136 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Calculateur</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LÉMAN COURSES – Calculateur</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:linear-gradient(135deg,#0b2a44,#0f3d6b);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  color:#000;
+  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(135deg,#0b2a44,#0f3d66);
+  color:#fff;
+  padding:20px;
 }
 .card{
+  max-width:480px;
+  margin:auto;
   background:#fff;
-  width:360px;
-  padding:24px;
+  color:#000;
   border-radius:16px;
-  box-shadow:0 15px 40px rgba(0,0,0,.3);
+  padding:20px;
 }
-h1{
-  text-align:center;
-  margin:0;
-  color:#0b2a44;
-}
-.subtitle{
-  text-align:center;
-  font-size:13px;
-  color:#555;
-  margin-bottom:20px;
-}
-label{
-  font-size:13px;
-  margin-top:12px;
-  display:block;
-}
-select,input{
+h1{text-align:center;color:#0b2a44;}
+p{text-align:center;font-size:13px;}
+label{font-weight:bold;font-size:13px;}
+input,select,button{
   width:100%;
+  margin-top:8px;
   padding:12px;
-  margin-top:6px;
-  border-radius:10px;
+  border-radius:8px;
   border:1px solid #ccc;
-  font-size:14px;
-}
-.price{
-  text-align:center;
-  font-size:26px;
-  font-weight:bold;
-  margin:18px 0;
-  color:#0b2a44;
 }
 button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:12px;
   background:#0b2a44;
   color:#fff;
-  font-size:15px;
+  font-weight:bold;
   cursor:pointer;
-  margin-top:10px;
 }
-button:hover{background:#0f3d6b}
+button:disabled{background:#999;}
+.price{
+  font-size:28px;
+  font-weight:bold;
+  text-align:center;
+  margin:15px 0;
+  color:#0b2a44;
+}
 .info{
   font-size:12px;
-  color:#444;
+  background:#f2f2f2;
+  padding:10px;
+  border-radius:8px;
   margin-top:10px;
-  text-align:center;
 }
-.footer{
-  text-align:center;
-  font-size:11px;
-  color:#666;
-  margin-top:12px;
+.form-client{
+  margin-top:20px;
+  border-top:1px solid #ddd;
+  padding-top:15px;
 }
+.hidden{display:none;}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h1>LÉMAN COURSES</h1>
-  <div class="subtitle">Transport express 24h/24 – 7j/7</div>
+<h1>LÉMAN COURSES</h1>
+<p>Transport express 24h/24 – 7j/7</p>
 
-  <label>Type de service</label>
-  <select id="service">
-    <option value="normal">Normal</option>
-    <option value="urgent">Urgent</option>
-    <option value="express">Express</option>
-  </select>
+<label>Distance (km)</label>
+<input type="number" id="km" min="1">
 
-  <label>Distance (km)</label>
-  <input id="km" type="number" min="1" placeholder="Ex : 25">
+<label>Poids du colis (kg)</label>
+<input type="number" id="poids" min="1">
 
-  <label>Poids du colis (kg)</label>
-  <input id="poids" type="number" min="1" placeholder="Max 30 kg">
+<label>Service</label>
+<select id="service">
+  <option value="normal">Normal</option>
+  <option value="urgent">Urgent</option>
+  <option value="express">Express</option>
+</select>
 
-  <label>Inter-villes ?</label>
-  <select id="interville">
-    <option value="no">Non</option>
-    <option value="yes">Oui</option>
-  </select>
+<label>Période</label>
+<select id="horaire">
+  <option value="jour">Jour</option>
+  <option value="nuit">Nuit / Dimanche</option>
+</select>
 
-  <label>Horaire</label>
-  <select id="horaire">
-    <option value="jour">Jour</option>
-    <option value="nuit">Nuit / Dimanche</option>
-  </select>
+<button onclick="updatePrice()">Calculer le tarif</button>
 
-  <div class="price" id="resultat">CHF –.–</div>
-  <div class="info" id="detail"></div>
+<div class="price" id="resultat">CHF —</div>
 
-  <button onclick="envoyerCommande()">Envoyer la commande</button>
+<div class="info" id="serviceInfo"></div>
 
-  <div class="info" id="serviceInfo"></div>
+<!-- FORMULAIRE CLIENT -->
+<div class="form-client">
+<h3>📦 Informations client</h3>
 
-  <div class="footer">
-    Prix indicatif – confirmation avant la course
-  </div>
+<label>Nom / Entreprise</label>
+<input type="text" id="client">
+
+<label>Téléphone</label>
+<input type="tel" id="tel">
+
+<label>Lieu de prise en charge</label>
+<input type="text" id="pickup">
+
+<label>Lieu de livraison</label>
+<input type="text" id="delivery">
+
+<label>Nature du colis</label>
+<input type="text" id="nature">
+
+<button id="sendBtn" disabled>Envoyer la commande</button>
+</div>
+
+<p style="font-size:11px;text-align:center;margin-top:10px;">
+Prix indicatif – confirmation avant la course
+</p>
+
 </div>
 
 <script>
-const resultat = document.getElementById("resultat");
-const detail = document.getElementById("detail");
-const serviceInfo = document.getElementById("serviceInfo");
+// GRILLE TARIFAIRE INTERNE
+const grille = [
+  {min:0,max:10,normal:6.5,urgent:43,express:30},
+  {min:11,max:30,normal:10,urgent:73,express:48},
+  {min:31,max:80,normal:13.5,urgent:103,express:66},
+  {min:81,max:150,normal:17,urgent:133,express:84},
+  {min:151,max:250,normal:20.5,urgent:163,express:102},
+  {min:251,max:500,normal:38,urgent:313,express:192},
+  {min:501,max:1500,normal:108,urgent:913,express:552}
+];
 
-function prixGrille(km, service){
-  const grille = [
-    {max:10,n:6.5,u:43,e:30},
-    {max:30,n:10,u:73,e:48},
-    {max:80,n:13.5,u:103,e:66},
-    {max:150,n:17,u:133,e:84},
-    {max:250,n:20.5,u:163,e:102},
-    {max:300,n:24,u:193,e:120},
-    {max:400,n:31,u:253,e:156},
-    {max:500,n:38,u:313,e:192},
-    {max:700,n:52,u:433,e:264},
-    {max:1000,n:73,u:613,e:372},
-    {max:1500,n:108,u:913,e:552}
-  ];
-  const row = grille.find(g=>km<=g.max);
-  if(!row) return null;
-  return service==="normal"?row.n:service==="urgent"?row.u:row.e;
-}
-
+// COEFF POIDS
 function coefPoids(p){
   if(p<=5) return 1;
   if(p<=10) return 1.1;
@@ -157,46 +141,53 @@ function coefPoids(p){
 }
 
 function updatePrice(){
-  const km=Number(kmInput.value);
-  const poids=Number(poidsInput.value);
-  const service=serviceSelect.value;
-  const inter=intervilleSelect.value;
-  const horaire=horaireSelect.value;
+  const km = Number(document.getElementById("km").value);
+  const poids = Number(document.getElementById("poids").value);
+  const service = document.getElementById("service").value;
+  const horaire = document.getElementById("horaire").value;
+  const result = document.getElementById("resultat");
+  const sendBtn = document.getElementById("sendBtn");
 
-  if(!km||!poids) return;
-
-  if(poids>30){
-    resultat.textContent="Devis requis";
-    detail.textContent="Colis > 30 kg";
+  if(!km || !poids){
+    result.textContent = "CHF —";
+    sendBtn.disabled = true;
     return;
   }
 
-  let prix=prixGrille(km,service);
-  if(prix===null){
-    resultat.textContent="Devis requis";
+  if(poids > 30){
+    alert("⚠️ Colis > 30 kg : devis spécial requis");
+    result.textContent = "Devis requis";
+    sendBtn.disabled = true;
     return;
   }
 
-  if(inter==="yes") prix+=km*1.2;
-  if(horaire==="nuit") prix*=1.25;
+  const ligne = grille.find(g => km >= g.min && km <= g.max);
+  if(!ligne){
+    result.textContent = "Distance hors grille";
+    sendBtn.disabled = true;
+    return;
+  }
 
-  prix*=coefPoids(poids);
-  prix=Math.ceil(prix/5)*5;
+  let prix = ligne[service];
 
-  resultat.textContent=`CHF ${prix}.–`;
-  detail.textContent=`${km} km · ${poids} kg · ${service.toUpperCase()}`;
+  if(horaire === "nuit") prix *= 1.25;
+
+  prix *= coefPoids(poids);
+  prix = Math.round(prix / 5) * 5;
+
+  result.textContent = `CHF ${prix}.-`;
+  sendBtn.disabled = false;
+
+  updateServiceInfo(service);
 }
 
-function updateServiceInfo(){
-  const s=serviceSelect.value;
-  serviceInfo.textContent=
-    s==="normal"?"Course standard – prise en charge rapide.":
-    s==="urgent"?"Course urgente – priorité immédiate.":
-    "Course express – enlèvement immédiat, livraison directe sans arrêt.";
+function updateServiceInfo(s){
+  const box = document.getElementById("serviceInfo");
+  if(s==="normal") box.textContent="Course standard – enlèvement planifié, livraison selon disponibilité.";
+  if(s==="urgent") box.textContent="Course urgente – priorité élevée, prise en charge accélérée.";
+  if(s==="express") box.textContent="Course express – priorité absolue, enlèvement immédiat, livraison directe.";
 }
+</script>
 
-function envoyerCommande(){
-  alert("Commande envoyée – nous vous contactons rapidement.");
-}
-
-con
+</body>
+</html>
