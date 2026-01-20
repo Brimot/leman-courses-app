@@ -119,8 +119,10 @@ button:disabled{background:#999;}
 <label>Nature du colis</label>
 <input id="nature">
 
-<button id="sendBtn" disabled>Envoyer la commande</button>
-</div>
+<button id="sendBtn" onclick="envoyerCommande()" disabled>
+  Envoyer la commande
+</button>
+
 
 <p class="small">
 Prix indicatif – confirmation avant la prise en charge du colis
@@ -185,6 +187,7 @@ async function calculer(){
   const poids = Number(poidsInput.value);
   const service = serviceSelect.value;
   const horaire = horaireSelect.value;
+  
 
   if(!cpStart.value || !cpEnd.value || !poids){
     alert("Merci de compléter les champs nécessaires");
@@ -199,6 +202,60 @@ async function calculer(){
   }
 
   result.textContent = "Calcul en cours…";
+  function envoyerCommande() {
+  const clientNom = document.getElementById("clientNom").value;
+  const clientTel = document.getElementById("clientTel").value;
+  const pickupAdr = document.getElementById("pickupAdr").value;
+  const livNom = document.getElementById("livNom").value;
+  const livAdr = document.getElementById("livAdr").value;
+  const nature = document.getElementById("nature").value;
+
+  if (!clientNom || !clientTel) {
+    alert("Merci de compléter au minimum le nom et le téléphone.");
+    return;
+  }
+
+  const sujet = "Nouvelle commande – Léman Courses";
+
+  const corps = `
+NOUVELLE COMMANDE – LÉMAN COURSES
+
+CLIENT
+Nom : ${clientNom}
+Téléphone : ${clientTel}
+
+PRISE EN CHARGE
+Adresse : ${pickupAdr}
+NPA départ : ${cpStart.value}
+
+LIVRAISON
+Nom : ${livNom}
+Adresse : ${livAdr}
+NPA arrivée : ${cpEnd.value}
+
+COLIS
+Nature : ${nature}
+Poids : ${poidsInput.value} kg
+
+SERVICE
+Type : ${serviceSelect.value.toUpperCase()}
+Période : ${horaireSelect.value}
+
+TARIF
+${result.textContent}
+
+NOTE
+Prix indicatif – confirmation avant prise en charge
+`;
+
+  const mailto = 
+    "mailto:info@leman-courses.ch" +
+    "?subject=" + encodeURIComponent(sujet) +
+    "&body=" + encodeURIComponent(corps);
+
+  window.location.href = mailto;
+}
+
 
   const km = await getKm(cpStart.value, cpEnd.value);
   if(km === null){
