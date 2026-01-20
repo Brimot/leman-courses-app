@@ -1,56 +1,56 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>LÉMAN COURSES – Commande transport</title>
+<title>Léman Courses – Commande transport</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
+  margin:0;
   font-family:Arial,Helvetica,sans-serif;
-  background:linear-gradient(135deg,#0b2a44,#0f3d66);
+  background:linear-gradient(135deg,#082A44,#0F3D66);
   color:#fff;
   padding:20px;
 }
 .card{
-  max-width:600px;
+  max-width:520px;
   margin:auto;
   background:#fff;
   color:#000;
   border-radius:16px;
   padding:20px;
-  box-shadow:0 15px 40px rgba(0,0,0,.3);
 }
-h1{text-align:center;color:#0b2a44;margin-top:0;}
-.section{margin-top:20px;border-top:1px solid #ddd;padding-top:15px;}
-label{font-weight:bold;font-size:13px;}
+h1{text-align:center;color:#082A44;}
+label{font-size:13px;margin-top:10px;display:block;}
 input,select,button{
   width:100%;
-  margin-top:6px;
   padding:12px;
+  margin-top:5px;
   border-radius:8px;
   border:1px solid #ccc;
 }
 button{
-  background:#0b2a44;
+  background:#082A44;
   color:#fff;
+  border:none;
   font-weight:bold;
   cursor:pointer;
 }
-button:disabled{background:#999;}
+button:disabled{opacity:.5;}
 .price{
-  font-size:30px;
-  text-align:center;
   margin:20px 0;
-  color:#0b2a44;
+  font-size:26px;
+  text-align:center;
+  font-weight:bold;
+  color:#082A44;
 }
 .info{
   font-size:12px;
-  background:#f2f2f2;
-  padding:10px;
-  border-radius:8px;
+  margin-top:10px;
+  color:#333;
 }
-.small{font-size:11px;color:#555;text-align:center;margin-top:10px;}
 </style>
 </head>
 
@@ -59,21 +59,18 @@ button:disabled{background:#999;}
 <div class="card">
 <h1>LÉMAN COURSES</h1>
 
-<!-- CODES POSTAUX -->
-<div class="section">
-<label>NPA prise en charge</label>
-<input id="cpStart" placeholder="Ex : 1000 Lausanne">
+<!-- CLIENT -->
+<label>Nom / Prénom</label>
+<input id="clientNom">
 
-<label>NPA livraison</label>
-<input id="cpEnd" placeholder="Ex : 1200 Genève">
-</div>
+<label>Téléphone</label>
+<input id="clientTel">
 
-<!-- OPTIONS -->
-<div class="section">
-<label>Poids du colis (kg)</label>
-<input type="number" id="poids" min="1" placeholder="Max 30 kg">
+<!-- TRAJET -->
+<label>Kilomètres (distance estimée)</label>
+<input id="km" type="number" min="1">
 
-<label>Type de service</label>
+<label>Service</label>
 <select id="service">
   <option value="normal">Normal</option>
   <option value="urgent">Urgent</option>
@@ -86,203 +83,116 @@ button:disabled{background:#999;}
   <option value="nuit">Nuit / Dimanche</option>
 </select>
 
-<button onclick="calculer()">Calculer le tarif</button>
-</div>
+<label>Poids du colis (kg)</label>
+<input id="poids" type="number" min="1">
 
-<div class="price" id="result">CHF —</div>
-<div class="info" id="detail"></div>
-
-<!-- CLIENT -->
-<div class="section">
-<h3>📦 Client</h3>
-
-<label>Nom / Prénom</label>
-<input id="clientNom">
-
-<label>Téléphone</label>
-<input id="clientTel">
-
-<label>Adresse prise en charge</label>
-<input id="pickupAdr">
-</div>
-
-<!-- LIVRAISON -->
-<div class="section">
-<h3>📍 Livraison</h3>
-
-<label>Nom / Prénom</label>
-<input id="livNom">
-
-<label>Adresse livraison</label>
-<input id="livAdr">
-
-<label>Nature du colis</label>
-<input id="nature">
+<div class="price" id="resultat">CHF –</div>
 
 <button id="sendBtn" onclick="envoyerCommande()" disabled>
-  Envoyer la commande
+Envoyer la commande
 </button>
 
-
-<p class="small">
-Prix indicatif – confirmation avant la prise en charge du colis
-</p>
-
+<div class="info">
+Prix indicatif – confirmation avant prise en charge<br>
+> 30 kg : devis spécial obligatoire
+</div>
 </div>
 
 <script>
-// ===== RÉFÉRENCES =====
-const cpStart = document.getElementById("cpStart");
-const cpEnd = document.getElementById("cpEnd");
-const poidsInput = document.getElementById("poids");
-const serviceSelect = document.getElementById("service");
-const horaireSelect = document.getElementById("horaire");
-const result = document.getElementById("result");
-const detail = document.getElementById("detail");
-const sendBtn = document.getElementById("sendBtn");
-
-// ===== GRILLE TARIFAIRE KM (INTERNE) =====
+/* =========================
+   GRILLE TARIFAIRE KM
+========================= */
 const grille = [
-  {min:0,max:10,normal:45,urgent:65,express:85},
-  {min:11,max:30,normal:65,urgent:95,express:125},
-  {min:31,max:80,normal:85,urgent:125,express:165},
-  {min:81,max:150,normal:105,urgent:155,express:205},
-  {min:151,max:300,normal:135,urgent:195,express:255},
-  {min:301,max:600,normal:175,urgent:255,express:335},
-  {min:601,max:1500,normal:215,urgent:315,express:415}
+  {max:10,  normal:6.5, urgent:43, express:30},
+  {max:30,  normal:10, urgent:73, express:48},
+  {max:80,  normal:13.5, urgent:103, express:66},
+  {max:150, normal:17, urgent:133, express:84},
+  {max:300, normal:24, urgent:193, express:120},
+  {max:500, normal:38, urgent:313, express:192},
+  {max:1000,normal:73, urgent:613, express:372},
+  {max:1500,normal:108,urgent:913, express:552}
 ];
 
-// ===== RÈGLE POIDS (COEF + SUPPLÉMENT) =====
-function reglePoids(p){
-  if(p <= 5)  return {coef:1.00, sup:0};
-  if(p <= 10) return {coef:1.10, sup:5};
-  if(p <= 20) return {coef:1.25, sup:10};
-  if(p <= 30) return {coef:1.40, sup:20};
+/* =========================
+   COEF POIDS
+========================= */
+function coefPoids(p){
+  if(p<=5) return 1;
+  if(p<=10) return 1.1;
+  if(p<=20) return 1.25;
+  if(p<=30) return 1.4;
   return null;
 }
 
-// ===== CALCUL DISTANCE (OSM) =====
-async function getKm(cp1, cp2){
-  const geo = async cp => {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(cp)},Switzerland`
-    );
-    const d = await r.json();
-    return d[0] ? [d[0].lon, d[0].lat] : null;
-  };
-
-  const A = await geo(cp1);
-  const B = await geo(cp2);
-  if(!A || !B) return null;
-
-  const r = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`
-  );
-  const d = await r.json();
-  return Math.round(d.routes[0].distance / 1000);
-}
-
-// ===== CALCUL TARIF =====
-async function calculer(){
+/* =========================
+   CALCUL PRIX
+========================= */
+function calculer(){
+  const km = Number(kmInput.value);
   const poids = Number(poidsInput.value);
   const service = serviceSelect.value;
   const horaire = horaireSelect.value;
-  
 
-  if(!cpStart.value || !cpEnd.value || !poids){
-    alert("Merci de compléter les champs nécessaires");
-    return;
-  }
+  if(!km || !poids) return;
 
-  if(poids > 30){
-    alert("⚠️ Colis > 30 kg : devis spécial requis");
-    result.textContent = "Devis requis";
+  if(poids>30){
+    resultat.textContent = "Devis spécial requis";
     sendBtn.disabled = true;
     return;
   }
 
-  result.textContent = "Calcul en cours…";
-  function envoyerCommande() {
-  const clientNom = document.getElementById("clientNom").value;
-  const clientTel = document.getElementById("clientTel").value;
-  const pickupAdr = document.getElementById("pickupAdr").value;
-  const livNom = document.getElementById("livNom").value;
-  const livAdr = document.getElementById("livAdr").value;
-  const nature = document.getElementById("nature").value;
-
-  if (!clientNom || !clientTel) {
-    alert("Merci de compléter au minimum le nom et le téléphone.");
-    return;
-  }
-
-  const sujet = "Nouvelle commande – Léman Courses";
-
-  const corps = `
-NOUVELLE COMMANDE – LÉMAN COURSES
-
-CLIENT
-Nom : ${clientNom}
-Téléphone : ${clientTel}
-
-PRISE EN CHARGE
-Adresse : ${pickupAdr}
-NPA départ : ${cpStart.value}
-
-LIVRAISON
-Nom : ${livNom}
-Adresse : ${livAdr}
-NPA arrivée : ${cpEnd.value}
-
-COLIS
-Nature : ${nature}
-Poids : ${poidsInput.value} kg
-
-SERVICE
-Type : ${serviceSelect.value.toUpperCase()}
-Période : ${horaireSelect.value}
-
-TARIF
-${result.textContent}
-
-NOTE
-Prix indicatif – confirmation avant prise en charge
-`;
-
-  const mailto = 
-    "mailto:info@leman-courses.ch" +
-    "?subject=" + encodeURIComponent(sujet) +
-    "&body=" + encodeURIComponent(corps);
-
-  window.location.href = mailto;
-}
-
-
-  const km = await getKm(cpStart.value, cpEnd.value);
-  if(km === null){
-    result.textContent = "Erreur calcul distance";
-    return;
-  }
-
-  const ligne = grille.find(g => km >= g.min && km <= g.max);
+  const ligne = grille.find(g => km <= g.max);
   if(!ligne){
-    result.textContent = "Distance hors grille";
+    resultat.textContent = "Distance hors grille";
+    sendBtn.disabled = true;
     return;
   }
 
   let prix = ligne[service];
 
-  if(horaire === "nuit") prix *= 1.25;
+  if(horaire==="nuit") prix *= 1.25;
+  prix *= coefPoids(poids);
 
-  const rPoids = reglePoids(poids);
-  prix = prix * rPoids.coef + rPoids.sup;
+  prix = Math.round(prix/5)*5;
 
-  prix = Math.ceil(prix / 5) * 5;
-
-  result.textContent = `CHF ${prix}.–`;
-  detail.textContent = `Distance : ${km} km · ${service.toUpperCase()} · ${poids} kg`;
-
+  resultat.textContent = "CHF " + prix + ".–";
   sendBtn.disabled = false;
 }
+
+/* =========================
+   ENVOI EMAIL
+========================= */
+function envoyerCommande(){
+  const sujet = "Commande Léman Courses";
+  const corps =
+`Client : ${clientNom.value}
+Téléphone : ${clientTel.value}
+
+Distance : ${kmInput.value} km
+Poids : ${poidsInput.value} kg
+Service : ${serviceSelect.value}
+Période : ${horaireSelect.value}
+
+${resultat.textContent}`;
+
+  window.location.href =
+   "mailto:info@leman-courses.ch"+
+   "?subject="+encodeURIComponent(sujet)+
+   "&body="+encodeURIComponent(corps);
+}
+
+/* =========================
+   EVENTS
+========================= */
+const kmInput = document.getElementById("km");
+const poidsInput = document.getElementById("poids");
+const serviceSelect = document.getElementById("service");
+const horaireSelect = document.getElementById("horaire");
+const resultat = document.getElementById("resultat");
+const sendBtn = document.getElementById("sendBtn");
+
+[kmInput,poidsInput,serviceSelect,horaireSelect]
+.forEach(el => el.addEventListener("input", calculer));
 </script>
 
 </body>
