@@ -1,20 +1,19 @@
-
 <!DOCTYPE html>
 <html lang="fr">
-  
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0B2A44">
-
 <head>
   <meta charset="UTF-8">
   <title>Léman Courses – Calculateur express</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B2A44">
+
   <style>
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
-      background: linear-gradient(135deg,#0b2a4a,#0f3d6b);
+      background: linear-gradient(135deg, #0B2A44, #0F3D66);
       color: #fff;
       padding: 20px;
     }
@@ -26,13 +25,13 @@
       color: #000;
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
 
     h1 {
       text-align: center;
+      color: #0B2A44;
       margin-bottom: 10px;
-      color: #0b2a4a;
     }
 
     p {
@@ -51,37 +50,32 @@
     }
 
     button {
-      background: #f5b400;
+      background: #F5B400;
       border: none;
       font-weight: bold;
       cursor: pointer;
     }
 
     button:hover {
-      background: #e0a600;
+      background: #E0A600;
     }
 
     .price {
-      margin: 20px 0;
+      margin-top: 20px;
       font-size: 24px;
       font-weight: bold;
       text-align: center;
-      color: #0b2a4a;
+      color: #0B2A44;
     }
 
     .actions button {
       margin-top: 10px;
-      background: #0b2a4a;
+      background: #0B2A44;
       color: #fff;
     }
 
     .actions button.whatsapp {
       background: #25D366;
-      color: #fff;
-    }
-
-    .actions button.mail {
-      background: #555;
     }
 
     .phone-script {
@@ -94,15 +88,6 @@
     }
   </style>
 </head>
-
-  <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js")
-    .then(() => console.log("Service Worker enregistré"))
-    .catch(err => console.error("SW error:", err));
-}
-</script>
-
 
 <body>
 
@@ -129,4 +114,42 @@ if ("serviceWorker" in navigator) {
 
     <button onclick="calculer()">Calculer le tarif</button>
 
-    <div class="price" id="resultat">Dès CHF 35.–</d
+    <div class="price" id="resultat">Dès CHF 35.–</div>
+
+    <div class="actions">
+      <button class="whatsapp" onclick="window.open('https://wa.me/41798700488','_blank')">
+        WhatsApp direct
+      </button>
+      <button onclick="window.location.href='tel:+41798700488'">
+        Appeler maintenant
+      </button>
+    </div>
+
+    <div class="phone-script">
+      <strong>Script téléphone :</strong><br>
+      « Bonjour, Léman Courses, transport express.
+      Où se situe le départ et la livraison ? »
+    </div>
+  </div>
+
+  <script>
+    function calculer() {
+      const type = parseFloat(document.getElementById("type").value);
+      const urgence = parseFloat(document.getElementById("urgence").value);
+      const horaire = parseFloat(document.getElementById("horaire").value);
+
+      const prix = Math.round(type * (1 + urgence / 100) * horaire);
+
+      document.getElementById("resultat").innerText =
+        "Dès CHF " + prix + ".–";
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js")
+        .then(() => console.log("Service Worker OK"))
+        .catch(err => console.error("SW erreur", err));
+    }
+  </script>
+
+</body>
+</html>
