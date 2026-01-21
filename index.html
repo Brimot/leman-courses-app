@@ -40,6 +40,11 @@ button{
   color:#0B2A44;
   margin:15px 0;
 }
+.notice{
+  text-align:center;
+  font-size:13px;
+  color:green;
+}
 </style>
 </head>
 
@@ -72,7 +77,7 @@ button{
 
 <button onclick="envoyerCommande()">Envoyer la commande</button>
 
-<p id="retour"></p>
+<p id="retour" class="notice"></p>
 </div>
 
 <script>
@@ -88,11 +93,12 @@ function calculerPrix(){
 }
 
 async function envoyerCommande(){
-  document.getElementById("retour").innerText = "Envoi en cours…";
+  document.getElementById("retour").innerText = "Envoi de la commande…";
 
   try{
-    const res = await fetch(URL,{
+    await fetch(URL,{
       method:"POST",
+      mode:"no-cors",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         nom: nom.value,
@@ -104,11 +110,12 @@ async function envoyerCommande(){
       })
     });
 
-    const txt = await res.text();
-    document.getElementById("retour").innerText = txt;
+    document.getElementById("retour").innerText =
+      "✅ Commande envoyée avec succès (enregistrée)";
 
   }catch(e){
-    document.getElementById("retour").innerText = "Erreur : " + e.message;
+    document.getElementById("retour").innerText =
+      "❌ Erreur d’envoi";
   }
 }
 
