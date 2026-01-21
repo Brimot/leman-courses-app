@@ -2,40 +2,40 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Devis</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Léman Courses – Commande transport</title>
 
-<!-- jsPDF CDN (OBLIGATOIRE) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-        integrity="sha512-AqCANc+XG4V0X5zKcF+RZrFz5nH2N0l7l8xY+K2p5K4xkC5x8C5h2Kxv9Zb7yZJr0z8nX1K3Kz0FQK7x5w=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
+  margin:0;
   font-family:Arial,Helvetica,sans-serif;
-  background:#0B2A44;
-  color:#fff;
+  background:linear-gradient(135deg,#0B2A44,#0F3D5E);
   padding:20px;
+  color:#fff;
 }
 .card{
-  max-width:520px;
+  max-width:650px;
   margin:auto;
   background:#fff;
   color:#000;
+  border-radius:16px;
   padding:20px;
-  border-radius:12px;
 }
-h1{text-align:center;color:#0B2A44;}
-label{font-size:13px;font-weight:bold;}
-input,button{
+h1{text-align:center;color:#0B2A44;margin:0;}
+.sub{text-align:center;color:#555;font-size:13px;margin-bottom:15px;}
+label{font-weight:bold;font-size:13px;}
+input,select,textarea,button{
   width:100%;
-  padding:12px;
   margin-top:6px;
   margin-bottom:12px;
+  padding:12px;
   border-radius:8px;
   border:1px solid #ccc;
 }
+textarea{min-height:70px;}
 button{
   background:#0B2A44;
   color:#fff;
@@ -43,92 +43,172 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
+button.secondary{background:#25D366;}
+.price{font-size:30px;text-align:center;color:#0B2A44;margin:10px 0;}
+.detail{text-align:center;font-size:13px;color:#333;}
+.warning{text-align:center;color:red;font-weight:bold;}
+.small{text-align:center;font-size:11px;color:#666;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:600px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
-
 <div class="card">
-<h1>DEVIS – LÉMAN COURSES</h1>
 
-<label>Nom du client</label>
-<input id="clientNom" placeholder="Nom Prénom">
+<h1>LÉMAN COURSES</h1>
+<div class="sub">Transport express 24h/24 – 7j/7</div>
 
-<label>Téléphone</label>
-<input id="clientTel" placeholder="079 xxx xx xx">
+<!-- TRAJET -->
+<div class="row">
+  <div>
+    <label>NPA départ</label>
+    <input id="npaDepart">
+  </div>
+  <div>
+    <label>NPA arrivée</label>
+    <input id="npaArrivee">
+  </div>
+</div>
 
-<label>Distance (km)</label>
-<input id="km" placeholder="Ex : 45">
+<label>Kilomètres (auto)</label>
+<input id="km" readonly>
+<div class="small" id="kmStatus">Saisis les deux NPA</div>
 
-<label>Poids du colis (kg)</label>
-<input id="poids" placeholder="Ex : 12">
+<!-- OPTIONS -->
+<div class="row">
+  <div>
+    <label>Poids du colis (kg)</label>
+    <input id="poids" type="number" min="1">
+  </div>
+  <div>
+    <label>Inter-villes</label>
+    <select id="interville">
+      <option value="Non">Non</option>
+      <option value="Oui">Oui</option>
+    </select>
+  </div>
+</div>
 
-<label>Prix estimé</label>
-<input id="prix" value="CHF 120.–">
+<div class="row">
+  <div>
+    <label>Service</label>
+    <select id="service">
+      <option value="Normal">Normal</option>
+      <option value="Urgent">Urgent</option>
+      <option value="Express">Express</option>
+    </select>
+  </div>
+  <div>
+    <label>Horaire</label>
+    <select id="horaire">
+      <option value="Jour">Jour</option>
+      <option value="Nuit">Nuit / Dimanche</option>
+    </select>
+  </div>
+</div>
 
+<div class="price" id="prix">CHF –.–</div>
+<div class="detail" id="detail"></div>
+<div class="warning" id="warning"></div>
+
+<hr>
+
+<!-- CLIENT -->
+<h3>Client</h3>
+<div class="row">
+  <div>
+    <label>Nom & Prénom</label>
+    <input id="clientNom">
+  </div>
+  <div>
+    <label>Téléphone</label>
+    <input id="clientTel">
+  </div>
+</div>
+
+<div class="row">
+  <div>
+    <label>Email</label>
+    <input id="clientEmail">
+  </div>
+  <div>
+    <label>Entreprise</label>
+    <input id="clientSociete">
+  </div>
+</div>
+
+<label>Adresse prise en charge</label>
+<input id="pickupAdr">
+
+<label>Adresse livraison</label>
+<input id="livAdr">
+
+<label>Nature du colis</label>
+<input id="nature">
+
+<label>Remarques</label>
+<textarea id="remarques"></textarea>
+
+<button onclick="envoyerEmail()">📧 Envoyer par email</button>
+<button class="secondary" onclick="envoyerWhatsapp()">📱 WhatsApp</button>
 <button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
+
+<p class="small">Prix indicatif – confirmation avant prise en charge • &gt; 30 kg : devis spécial</p>
+
 </div>
 
 <script>
+/* ========= PDF ========= */
 function genererPDF(){
-
-  // Vérification basique
   if(!clientNom.value || !clientTel.value){
     alert("Merci de renseigner le nom et le téléphone.");
     return;
   }
 
-  // jsPDF
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
   let y = 15;
-
-  // Titre
   doc.setFontSize(16);
-  doc.text("DEVIS – LÉMAN COURSES", 105, y, { align: "center" });
-  y += 10;
+  doc.text("DEVIS – LÉMAN COURSES", 105, y, { align:"center" });
+  y+=10;
 
   doc.setFontSize(10);
-  doc.text("Transport express 24h/24 – 7j/7", 105, y, { align: "center" });
-  y += 10;
+  doc.text("Transport express 24h/24 – 7j/7",105,y,{align:"center"});
+  y+=10;
 
-  doc.line(10, y, 200, y);
-  y += 10;
+  doc.line(10,y,200,y); y+=10;
 
-  // Client
   doc.setFontSize(12);
-  doc.text("CLIENT", 10, y);
-  y += 6;
-
+  doc.text("CLIENT",10,y); y+=6;
   doc.setFontSize(10);
-  doc.text("Nom : " + clientNom.value, 10, y); y += 5;
-  doc.text("Téléphone : " + clientTel.value, 10, y); y += 10;
+  doc.text(`Nom : ${clientNom.value}`,10,y); y+=5;
+  doc.text(`Téléphone : ${clientTel.value}`,10,y); y+=10;
 
-  // Course
   doc.setFontSize(12);
-  doc.text("COURSE", 10, y);
-  y += 6;
-
+  doc.text("TRAJET",10,y); y+=6;
   doc.setFontSize(10);
-  doc.text("Distance : " + km.value + " km", 10, y); y += 5;
-  doc.text("Poids colis : " + poids.value + " kg", 10, y); y += 10;
+  doc.text(`NPA départ : ${npaDepart.value}`,10,y); y+=5;
+  doc.text(`NPA arrivée : ${npaArrivee.value}`,10,y); y+=5;
+  doc.text(`Distance : ${km.value} km`,10,y); y+=10;
 
-  // Prix
+  doc.setFontSize(12);
+  doc.text("COLIS",10,y); y+=6;
+  doc.setFontSize(10);
+  doc.text(`Poids : ${poids.value} kg`,10,y); y+=5;
+  doc.text(`Nature : ${nature.value}`,10,y); y+=10;
+
   doc.setFontSize(14);
-  doc.text("PRIX ESTIMÉ : " + prix.value, 10, y);
-  y += 12;
+  doc.text(`PRIX ESTIMÉ : ${prix.textContent}`,10,y);
 
-  // Footer
+  y+=12;
   doc.setFontSize(9);
   doc.text(
-    "Prix indicatif – confirmation avant prise en charge.\n" +
-    "Léman Courses – Suisse romande",
-    10,
-    y
+    "Prix indicatif – confirmation avant prise en charge.\nLéman Courses – Suisse romande",
+    10,y
   );
 
-  // 🔽 TÉLÉCHARGEMENT
   doc.save("Devis_Leman_Courses.pdf");
 }
 </script>
