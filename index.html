@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Léman Courses – Commande Régie / Entreprise</title>
+<title>Léman Courses – Devis & Commande</title>
 
+<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -16,7 +17,7 @@ body{
   color:#fff;
 }
 .card{
-  max-width:720px;
+  max-width:760px;
   margin:auto;
   background:#fff;
   color:#000;
@@ -44,12 +45,13 @@ button{
   cursor:pointer;
 }
 button.secondary{background:#25D366;}
+button:disabled{opacity:.5;cursor:not-allowed;}
 .price{font-size:30px;text-align:center;color:#0B2A44;margin:10px 0;}
 .detail{text-align:center;font-size:13px;color:#333;}
 .warning{text-align:center;color:red;font-weight:bold;}
 .small{text-align:center;font-size:11px;color:#666;}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:650px){.row{grid-template-columns:1fr}}
+@media(max-width:700px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
@@ -57,25 +59,25 @@ button.secondary{background:#25D366;}
 <div class="card">
 
 <h1>LÉMAN COURSES</h1>
-<div class="sub">Transport express – Régies & Entreprises</div>
+<div class="sub">Transport express – Devis & Commande</div>
 
 <!-- TYPE CLIENT -->
-<h3>Type de client</h3>
-<label>Catégorie</label>
+<h3>Client</h3>
+<label>Type de client</label>
 <select id="typeClient">
   <option value="Particulier">Particulier</option>
-  <option value="Régie">Régie immobilière</option>
+  <option value="Régie">Régie</option>
   <option value="Entreprise">Entreprise</option>
 </select>
 
-<label>Nom de la régie / entreprise</label>
-<input id="societe" placeholder="Ex : Comptoir Immobilier SA">
+<label>Nom régie / entreprise</label>
+<input id="societe">
 
 <label>Personne de contact</label>
-<input id="contact" placeholder="Nom du gestionnaire / collaborateur">
+<input id="contact">
 
 <label>Référence dossier / mandat</label>
-<input id="reference" placeholder="Ex : CI-2026-1458">
+<input id="reference">
 
 <hr>
 
@@ -96,7 +98,7 @@ button.secondary{background:#25D366;}
 <input id="km" readonly>
 <div class="small" id="kmStatus">Saisis les deux NPA</div>
 
-<!-- OPTIONS -->
+<!-- PRESTATION -->
 <h3>Prestation</h3>
 <div class="row">
   <div>
@@ -130,13 +132,16 @@ button.secondary{background:#25D366;}
   </div>
 </div>
 
+<label>Numéro de devis</label>
+<input id="numDevis" readonly>
+
 <div class="price" id="prix">CHF –.–</div>
 <div class="detail" id="detail"></div>
 <div class="warning" id="warning"></div>
 
 <hr>
 
-<!-- CONTACT -->
+<!-- CONTACT OPÉRATIONNEL -->
 <h3>Contact opérationnel</h3>
 <div class="row">
   <div>
@@ -166,16 +171,20 @@ button.secondary{background:#25D366;}
 
 <button onclick="envoyerEmail()">📧 Envoyer la commande</button>
 <button class="secondary" onclick="envoyerWhatsapp()">📱 WhatsApp</button>
-<button onclick="genererPDF()">📄 Devis PDF</button>
+<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
 
 <p class="small">
-Prix indicatif – confirmation avant prise en charge • Version Régie / Entreprise
+Prix indicatif – confirmation avant prise en charge • Devis numéroté automatiquement
 </p>
 
 </div>
 
 <script>
-/* === RÈGLES TARIF (identiques à ta version validée) === */
+// 🔗 URL GOOGLE APPS SCRIPT (TON URL)
+const GOOGLE_SHEET_URL =
+"https://script.google.com/macros/s/AKfycbydpMcr8wVElLVcpx_CZhLh57nfxdSnSxo37ozOVl4zR7Uyn8tIVJPEGNdrytYEiPTp/exec";
+
+/* ================= TARIFS ================= */
 function reglePoids(p){
   if(p<=5) return {coef:1, sup:0};
   if(p<=10) return {coef:1.1, sup:5};
@@ -194,7 +203,7 @@ function baseKm(km,service){
   return null;
 }
 
-/* === KM AUTO + INTERVILLES AUTO === */
+/* ================= KM AUTO ================= */
 async function calculKm(){
   if(!npaDepart.value||!npaArrivee.value) return;
   kmStatus.textContent="Calcul distance…";
@@ -226,14 +235,14 @@ async function calculKm(){
   calculPrix();
 }
 
-/* === PRIX === */
+/* ================= PRIX ================= */
 function calculPrix(){
   warning.textContent="";
   const k=Number(km.value), p=Number(poids.value);
   if(!k||!p){prix.textContent="CHF –.–";return;}
 
   const rp=reglePoids(p);
-  if(!rp){prix.textContent="DEVIS";warning.textContent="⚠️ >30 kg";return;}
+  if(!rp){prix.textContent="DEVIS";warning.textContent="⚠️ Colis > 30 kg";return;}
 
   let total=baseKm(k,service.value)*rp.coef+rp.sup;
   if(horaire.value==="Nuit") total*=1.25;
@@ -244,17 +253,38 @@ function calculPrix(){
   detail.textContent=`${k} km • ${p} kg • ${service.value.toUpperCase()}`;
 }
 
-/* === EMAIL / WHATSAPP / PDF (identiques logique validée) === */
-function envoyerEmail(){
-  const sujet="Commande – Léman Courses (Régie/Entreprise)";
-  const corps=`CLIENT : ${typeClient.value}
-Société : ${societe.value}
-Contact : ${contact.value}
-Référence : ${reference.value}
+/* ================= ENREGISTREMENT + N° DEVIS ================= */
+async function enregistrerDevis(){
+  const res = await fetch(GOOGLE_SHEET_URL,{
+    method:"POST",
+    body: JSON.stringify({
+      typeClient:typeClient.value,
+      societe:societe.value,
+      contact:contact.value,
+      reference:reference.value,
+      clientNom:clientNom.value,
+      clientTel:clientTel.value,
+      clientEmail:clientEmail.value,
+      km:km.value,
+      poids:poids.value,
+      prix:prix.textContent
+    })
+  });
+  const data = await res.json();
+  numDevis.value = data.devis;
+  return data.devis;
+}
 
-Nom : ${clientNom.value}
+/* ================= EMAIL ================= */
+async function envoyerEmail(){
+  const devis = await enregistrerDevis();
+  const sujet = `Devis ${devis} – Léman Courses`;
+  const corps = `
+DEVIS ${devis}
+
+Client : ${societe.value || clientNom.value}
+Contact : ${clientNom.value}
 Téléphone : ${clientTel.value}
-Email : ${clientEmail.value}
 
 Trajet : ${km.value} km
 Poids : ${poids.value} kg
@@ -262,23 +292,31 @@ Service : ${service.value}
 Horaire : ${horaire.value}
 Inter-villes : ${interville.value}
 
-PRIX : ${prix.textContent}`;
+PRIX : ${prix.textContent}
+`;
   window.location.href="mailto:info@leman-courses.ch?subject="+encodeURIComponent(sujet)+"&body="+encodeURIComponent(corps);
 }
+
+/* ================= WHATSAPP ================= */
 function envoyerWhatsapp(){
-  window.open("https://wa.me/?text="+encodeURIComponent(`Commande Léman Courses – ${prix.textContent}`));
+  window.open("https://wa.me/?text="+encodeURIComponent(`Devis ${numDevis.value} – ${prix.textContent}`));
 }
-function genererPDF(){
+
+/* ================= PDF ================= */
+async function genererPDF(){
+  const devis = await enregistrerDevis();
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
   pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.text(`Client : ${societe.value || clientNom.value}`,10,30);
-  pdf.text(`Référence : ${reference.value}`,10,38);
-  pdf.text(`Prix : ${prix.textContent}`,10,55);
-  pdf.save("Devis_Leman_Courses.pdf");
+  pdf.text(`Devis n° : ${devis}`,10,30);
+  pdf.text(`Client : ${societe.value || clientNom.value}`,10,38);
+  pdf.text(`Trajet : ${km.value} km`,10,46);
+  pdf.text(`Poids : ${poids.value} kg`,10,54);
+  pdf.text(`Prix : ${prix.textContent}`,10,70);
+  pdf.save(`Devis_${devis}.pdf`);
 }
 
-/* === EVENTS === */
+/* ================= EVENTS ================= */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
 [poids,service,horaire,interville].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
