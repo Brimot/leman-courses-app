@@ -45,6 +45,7 @@ button{
   font-size:13px;
   color:green;
 }
+iframe{display:none;}
 </style>
 </head>
 
@@ -53,70 +54,59 @@ button{
 <div class="card">
 <h1>Commande – Léman Courses</h1>
 
+<form id="commandeForm"
+      action="https://script.google.com/macros/s/AKfycby88Wpx7RoxGh_4iaoH66G5JfSri7HngXyBRJyiPSPS_fijMIw_pbqD7pjkviGeGHLi/exec"
+      method="POST"
+      target="hiddenFrame"
+      onsubmit="envoyeOk()">
+
 <label>Nom du client</label>
-<input id="nom">
+<input name="nom" required>
 
 <label>Téléphone</label>
-<input id="telephone">
+<input name="telephone" required>
 
 <label>Adresse de prise en charge</label>
-<input id="depart">
+<input name="depart">
 
 <label>Adresse de livraison</label>
-<input id="arrivee">
+<input name="arrivee">
 
 <label>Poids du colis</label>
-<select id="poids" onchange="calculerPrix()">
+<select name="poids" onchange="calculerPrix()">
   <option value="5">0 – 5 kg</option>
   <option value="10">6 – 10 kg</option>
   <option value="20">11 – 20 kg</option>
   <option value="30">21 – 30 kg</option>
 </select>
 
+<input type="hidden" name="prix" id="prixHidden">
+
 <div class="price" id="prix">CHF 25.–</div>
 
-<button onclick="envoyerCommande()">Envoyer la commande</button>
+<button type="submit">Envoyer la commande</button>
+</form>
 
 <p id="retour" class="notice"></p>
+
+<iframe name="hiddenFrame"></iframe>
 </div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycby88Wpx7RoxGh_4iaoH66G5JfSri7HngXyBRJyiPSPS_fijMIw_pbqD7pjkviGeGHLi/exec";
-
 function calculerPrix(){
-  const p = Number(document.getElementById("poids").value);
+  const p = Number(document.querySelector("[name=poids]").value);
   let prix = 25;
   if(p > 5) prix += 10;
   if(p > 10) prix += 15;
   if(p > 20) prix += 20;
+
   document.getElementById("prix").innerText = "CHF " + prix + ".–";
+  document.getElementById("prixHidden").value = "CHF " + prix + ".–";
 }
 
-async function envoyerCommande(){
-  document.getElementById("retour").innerText = "Envoi de la commande…";
-
-  try{
-    await fetch(URL,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        nom: nom.value,
-        telephone: telephone.value,
-        depart: depart.value,
-        arrivee: arrivee.value,
-        poids: poids.value,
-        prix: document.getElementById("prix").innerText
-      })
-    });
-
-    document.getElementById("retour").innerText =
-      "✅ Commande envoyée avec succès (enregistrée)";
-
-  }catch(e){
-    document.getElementById("retour").innerText =
-      "❌ Erreur d’envoi";
-  }
+function envoyeOk(){
+  document.getElementById("retour").innerText =
+    "✅ Commande envoyée et enregistrée";
 }
 
 calculerPrix();
