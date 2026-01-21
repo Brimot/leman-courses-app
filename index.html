@@ -17,7 +17,7 @@ body{
   color:#fff;
 }
 .card{
-  max-width:650px;
+  max-width:680px;
   margin:auto;
   background:#fff;
   color:#000;
@@ -44,6 +44,7 @@ button{
   cursor:pointer;
 }
 button.secondary{background:#25D366;}
+button:disabled{opacity:.5;cursor:not-allowed;}
 .price{font-size:30px;text-align:center;color:#0B2A44;margin:10px 0;}
 .detail{text-align:center;font-size:13px;color:#333;}
 .warning{text-align:center;color:red;font-weight:bold;}
@@ -72,7 +73,7 @@ button.secondary{background:#25D366;}
 </div>
 
 <label>Kilomètres (calcul automatique)</label>
-<input id="km" readonly placeholder="Calcul automatique…">
+<input id="km" readonly>
 <div class="small" id="kmStatus">Saisis les deux NPA</div>
 
 <!-- OPTIONS -->
@@ -151,15 +152,17 @@ button.secondary{background:#25D366;}
 <textarea id="remarques"></textarea>
 
 <button onclick="envoyerEmail()">📧 Envoyer par email</button>
-<button class="secondary" onclick="envoyerWhatsapp()">📱 WhatsApp</button>
+<button class="secondary" onclick="envoyerWhatsapp()">📱 Envoyer par WhatsApp</button>
 <button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
 
-<p class="small">Prix indicatif – confirmation avant prise en charge • &gt; 30 kg : devis spécial</p>
+<p class="small">
+Prix indicatif – confirmation avant prise en charge • Colis &gt; 30 kg : devis spécial
+</p>
 
 </div>
 
 <script>
-// =================== TARIFS ===================
+/* ================= TARIFS ================= */
 function reglePoids(p){
   if(p<=5) return {coef:1, sup:0};
   if(p<=10) return {coef:1.1, sup:5};
@@ -178,14 +181,16 @@ function baseKm(km,service){
   return null;
 }
 
-// =================== KM AUTO ===================
+/* ================= KM AUTO ================= */
 async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
   kmStatus.textContent="Calcul distance…";
 
   const geo = async npa => {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa)}`);
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa)}`
+    );
     const d = await r.json();
     return d[0] ? [d[0].lon,d[0].lat] : null;
   };
@@ -193,29 +198,45 @@ async function calculKm(){
   try{
     const A = await geo(npaDepart.value);
     const B = await geo(npaArrivee.value);
-    if(!A||!B){kmStatus.textContent="NPA invalide";return;}
+    if(!A || !B){ kmStatus.textContent="NPA invalide"; return; }
 
-    const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`);
+    const r = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`
+    );
     const d = await r.json();
     const kmCalc = Math.round(d.routes[0].distance/1000);
 
     km.value = kmCalc;
-    kmStatus.textContent=`Distance : ${kmCalc} km`;
+    kmStatus.textContent = `Distance : ${kmCalc} km`;
+
+    /* 🔒 Inter-villes automatique */
+    if(kmCalc > 10){
+      interville.value = "Oui";
+      interville.disabled = true;
+    }else{
+      interville.value = "Non";
+      interville.disabled = false;
+    }
+
     calculPrix();
-  }catch(e){
+  }catch{
     kmStatus.textContent="Erreur de calcul km";
   }
 }
 
-// =================== PRIX ===================
+/* ================= PRIX ================= */
 function calculPrix(){
   warning.textContent="";
   const k = Number(km.value);
   const p = Number(poids.value);
-  if(!k||!p){prix.textContent="CHF –.–";return;}
+  if(!k || !p){ prix.textContent="CHF –.–"; return; }
 
   const rp = reglePoids(p);
-  if(!rp){prix.textContent="DEVIS";warning.textContent="⚠️ Colis > 30 kg";return;}
+  if(!rp){
+    prix.textContent="DEVIS";
+    warning.textContent="⚠️ Colis > 30 kg";
+    return;
+  }
 
   let total = baseKm(k,service.value);
   total = total * rp.coef + rp.sup;
@@ -223,31 +244,102 @@ function calculPrix(){
   if(interville.value==="Oui" && k>10) total+=k*1.2;
 
   total = Math.ceil(total/5)*5;
-  prix.textContent=`CHF ${total}.–`;
-  detail.textContent=`${k} km • ${p} kg • ${service.value.toUpperCase()}`;
+  prix.textContent = `CHF ${total}.–`;
+  detail.textContent = `${k} km • ${p} kg • ${service.value.toUpperCase()}`;
 }
 
-// =================== PDF ===================
+/* ================= EMAIL ================= */
+function envoyerEmail(){
+  if(!clientNom.value || !clientTel.value){
+    alert("Nom et téléphone obligatoires");
+    return;
+  }
+
+  const sujet = "Commande – Léman Courses";
+  const corps = `
+COMMANDE TRANSPORT – LÉMAN COURSES
+
+CLIENT
+Nom : ${clientNom.value}
+Téléphone : ${clientTel.value}
+Email : ${clientEmail.value || "-"}
+Entreprise : ${clientSociete.value || "-"}
+
+TRAJET
+NPA départ : ${npaDepart.value}
+NPA arrivée : ${npaArrivee.value}
+Distance : ${km.value} km
+
+COLIS
+Poids : ${poids.value} kg
+Nature : ${nature.value || "-"}
+
+SERVICE
+Type : ${service.value}
+Horaire : ${horaire.value}
+Inter-villes : ${interville.value}
+
+PRIX ESTIMÉ
+${prix.textContent}
+
+REMARQUES
+${remarques.value || "-"}
+
+Prix indicatif – confirmation avant prise en charge.
+`;
+
+  window.location.href =
+    "mailto:info@leman-courses.ch" +
+    "?subject=" + encodeURIComponent(sujet) +
+    "&body=" + encodeURIComponent(corps);
+}
+
+/* ================= WHATSAPP ================= */
+function envoyerWhatsapp(){
+  const texte = `
+Commande Léman Courses
+Client : ${clientNom.value}
+Téléphone : ${clientTel.value}
+Prix : ${prix.textContent}
+`;
+  window.open("https://wa.me/?text="+encodeURIComponent(texte),"_blank");
+}
+
+/* ================= PDF ================= */
 function genererPDF(){
-  if(!clientNom.value||!clientTel.value){alert("Nom et téléphone requis");return;}
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  pdf.setFontSize(16);
-  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.setFontSize(10);
-  pdf.text(`Client : ${clientNom.value}`,10,35);
-  pdf.text(`Téléphone : ${clientTel.value}`,10,42);
-  pdf.text(`Distance : ${km.value} km`,10,52);
-  pdf.text(`Poids : ${poids.value} kg`,10,59);
-  pdf.text(`Prix estimé : ${prix.textContent}`,10,75);
-  pdf.save("Devis_Leman_Courses.pdf");
+  if(!clientNom.value || !clientTel.value){
+    alert("Nom et téléphone obligatoires");
+    return;
+  }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF();
+  let y = 15;
+
+  doc.setFontSize(16);
+  doc.text("DEVIS – LÉMAN COURSES",105,y,{align:"center"});
+  y+=10;
+
+  doc.setFontSize(10);
+  doc.text(`Client : ${clientNom.value}`,10,y); y+=6;
+  doc.text(`Téléphone : ${clientTel.value}`,10,y); y+=6;
+  doc.text(`Trajet : ${km.value} km`,10,y); y+=6;
+  doc.text(`Poids : ${poids.value} kg`,10,y); y+=6;
+
+  y+=6;
+  doc.setFontSize(14);
+  doc.text(`PRIX ESTIMÉ : ${prix.textContent}`,10,y);
+
+  y+=10;
+  doc.setFontSize(9);
+  doc.text(
+    "Prix indicatif – confirmation avant prise en charge.\nLéman Courses – Suisse romande",
+    10,y
+  );
+
+  doc.save("Devis_Leman_Courses.pdf");
 }
 
-// =================== ENVOIS ===================
-function envoyerEmail(){alert("Email prêt à être relié (PDF OK)");}
-function envoyerWhatsapp(){window.open("https://wa.me/?text=Commande Léman Courses","_blank");}
-
-// =================== EVENTS ===================
+/* ================= EVENTS ================= */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
 [poids,service,horaire,interville].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
