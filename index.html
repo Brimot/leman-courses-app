@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Commande</title>
+<title>Léman Courses – Commandes locales</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -13,7 +13,7 @@ body{
   color:#fff;
 }
 .card{
-  max-width:700px;
+  max-width:800px;
   margin:auto;
   background:#fff;
   color:#000;
@@ -40,76 +40,145 @@ button{
   color:#0B2A44;
   margin:15px 0;
 }
-.notice{
-  text-align:center;
-  font-size:13px;
-  color:green;
+.notice{color:green;text-align:center}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+  font-size:12px;
 }
-iframe{display:none;}
+th,td{
+  border:1px solid #ccc;
+  padding:6px;
+  text-align:left;
+}
+th{background:#eee}
 </style>
 </head>
 
 <body>
 
 <div class="card">
-<h1>Commande – Léman Courses</h1>
-
-<form id="commandeForm"
-      action="https://script.google.com/macros/s/AKfycby88Wpx7RoxGh_4iaoH66G5JfSri7HngXyBRJyiPSPS_fijMIw_pbqD7pjkviGeGHLi/exec"
-      method="POST"
-      target="hiddenFrame"
-      onsubmit="envoyeOk()">
+<h1>Léman Courses – Commande</h1>
 
 <label>Nom du client</label>
-<input name="nom" required>
+<input id="nom">
 
 <label>Téléphone</label>
-<input name="telephone" required>
+<input id="telephone">
 
-<label>Adresse de prise en charge</label>
-<input name="depart">
+<label>Lieu de prise en charge</label>
+<input id="depart">
 
-<label>Adresse de livraison</label>
-<input name="arrivee">
+<label>Lieu de livraison</label>
+<input id="arrivee">
 
 <label>Poids du colis</label>
-<select name="poids" onchange="calculerPrix()">
+<select id="poids" onchange="calculerPrix()">
   <option value="5">0 – 5 kg</option>
   <option value="10">6 – 10 kg</option>
   <option value="20">11 – 20 kg</option>
   <option value="30">21 – 30 kg</option>
 </select>
 
-<input type="hidden" name="prix" id="prixHidden">
-
 <div class="price" id="prix">CHF 25.–</div>
 
-<button type="submit">Envoyer la commande</button>
-</form>
+<button onclick="enregistrerCommande()">💾 Enregistrer la commande</button>
+<button onclick="exportCSV()">📄 Exporter CSV</button>
 
 <p id="retour" class="notice"></p>
 
-<iframe name="hiddenFrame"></iframe>
+<h2>Historique des commandes</h2>
+
+<table id="table">
+<thead>
+<tr>
+  <th>Date</th>
+  <th>Client</th>
+  <th>Téléphone</th>
+  <th>Départ</th>
+  <th>Arrivée</th>
+  <th>Poids</th>
+  <th>Prix</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
 </div>
 
 <script>
 function calculerPrix(){
-  const p = Number(document.querySelector("[name=poids]").value);
+  const p = Number(poids.value);
   let prix = 25;
   if(p > 5) prix += 10;
   if(p > 10) prix += 15;
   if(p > 20) prix += 20;
-
   document.getElementById("prix").innerText = "CHF " + prix + ".–";
-  document.getElementById("prixHidden").value = "CHF " + prix + ".–";
 }
 
-function envoyeOk(){
-  document.getElementById("retour").innerText =
-    "✅ Commande envoyée et enregistrée";
+function enregistrerCommande(){
+  const commande = {
+    date: new Date().toLocaleString(),
+    nom: nom.value,
+    telephone: telephone.value,
+    depart: depart.value,
+    arrivee: arrivee.value,
+    poids: poids.value,
+    prix: prix.innerText
+  };
+
+  const data = JSON.parse(localStorage.getItem("commandes") || "[]");
+  data.push(commande);
+  localStorage.setItem("commandes", JSON.stringify(data));
+
+  retour.innerText = "✅ Commande enregistrée localement";
+  afficherTable();
+}
+
+function afficherTable(){
+  const data = JSON.parse(localStorage.getItem("commandes") || "[]");
+  const tbody = document.querySelector("#table tbody");
+  tbody.innerHTML = "";
+
+  data.forEach(c => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.date}</td>
+      <td>${c.nom}</td>
+      <td>${c.telephone}</td>
+      <td>${c.depart}</td>
+      <td>${c.arrivee}</td>
+      <td>${c.poids} kg</td>
+      <td>${c.prix}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportCSV(){
+  const data = JSON.parse(localStorage.getItem("commandes") || "[]");
+  if(data.length === 0){
+    alert("Aucune commande à exporter");
+    return;
+  }
+
+  let csv = "Date;Client;Téléphone;Départ;Arrivée;Poids;Prix\n";
+  data.forEach(c => {
+    csv += `${c.date};${c.nom};${c.telephone};${c.depart};${c.arrivee};${c.poids};${c.prix}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "commandes_leman_courses.csv";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 calculerPrix();
+afficherTable();
 </script>
 
 </body>
