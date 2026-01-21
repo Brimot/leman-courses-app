@@ -2,41 +2,34 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Léman Courses – Devis & Commande</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
-  margin:0;
   font-family:Arial,Helvetica,sans-serif;
-  background:linear-gradient(135deg,#0B2A44,#0F3D5E);
-  padding:20px;
+  background:#0B2A44;
   color:#fff;
+  padding:20px;
 }
 .card{
-  max-width:760px;
+  max-width:720px;
   margin:auto;
   background:#fff;
   color:#000;
-  border-radius:16px;
   padding:20px;
+  border-radius:14px;
 }
-h1{text-align:center;color:#0B2A44;margin:0;}
-.sub{text-align:center;color:#555;font-size:13px;margin-bottom:15px;}
-h3{color:#0B2A44;margin-top:20px;}
+h1{color:#0B2A44;margin-top:0;}
 label{font-weight:bold;font-size:13px;}
-input,select,textarea,button{
+input,button{
   width:100%;
-  margin-top:6px;
-  margin-bottom:12px;
-  padding:12px;
-  border-radius:8px;
-  border:1px solid #ccc;
+  padding:10px;
+  margin:6px 0 12px 0;
 }
-textarea{min-height:70px;}
 button{
   background:#0B2A44;
   color:#fff;
@@ -44,281 +37,137 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
-button.secondary{background:#25D366;}
-button:disabled{opacity:.5;cursor:not-allowed;}
-.price{font-size:30px;text-align:center;color:#0B2A44;margin:10px 0;}
-.detail{text-align:center;font-size:13px;color:#333;}
-.warning{text-align:center;color:red;font-weight:bold;}
-.small{text-align:center;font-size:11px;color:#666;}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:700px){.row{grid-template-columns:1fr}}
+.price{
+  font-size:28px;
+  text-align:center;
+  color:#0B2A44;
+  margin:15px 0;
+}
 </style>
 </head>
 
 <body>
+
 <div class="card">
+<h1>LÉMAN COURSES – DEVIS</h1>
 
-<h1>LÉMAN COURSES</h1>
-<div class="sub">Transport express – Devis & Commande</div>
+<label>Nom du client</label>
+<input id="clientNom">
 
-<!-- TYPE CLIENT -->
-<h3>Client</h3>
-<label>Type de client</label>
-<select id="typeClient">
-  <option value="Particulier">Particulier</option>
-  <option value="Régie">Régie</option>
-  <option value="Entreprise">Entreprise</option>
-</select>
+<label>Téléphone</label>
+<input id="clientTel">
 
-<label>Nom régie / entreprise</label>
-<input id="societe">
+<label>Kilomètres</label>
+<input id="km" value="25">
 
-<label>Personne de contact</label>
-<input id="contact">
+<label>Poids du colis (kg)</label>
+<input id="poids" value="10">
 
-<label>Référence dossier / mandat</label>
-<input id="reference">
-
-<hr>
-
-<!-- TRAJET -->
-<h3>Trajet</h3>
-<div class="row">
-  <div>
-    <label>NPA départ</label>
-    <input id="npaDepart">
-  </div>
-  <div>
-    <label>NPA arrivée</label>
-    <input id="npaArrivee">
-  </div>
-</div>
-
-<label>Kilomètres (auto)</label>
-<input id="km" readonly>
-<div class="small" id="kmStatus">Saisis les deux NPA</div>
-
-<!-- PRESTATION -->
-<h3>Prestation</h3>
-<div class="row">
-  <div>
-    <label>Poids du colis (kg)</label>
-    <input id="poids" type="number" min="1">
-  </div>
-  <div>
-    <label>Inter-villes</label>
-    <select id="interville">
-      <option value="Non">Non</option>
-      <option value="Oui">Oui</option>
-    </select>
-  </div>
-</div>
-
-<div class="row">
-  <div>
-    <label>Service</label>
-    <select id="service">
-      <option value="Normal">Normal</option>
-      <option value="Urgent">Urgent</option>
-      <option value="Express">Express</option>
-    </select>
-  </div>
-  <div>
-    <label>Horaire</label>
-    <select id="horaire">
-      <option value="Jour">Jour</option>
-      <option value="Nuit">Nuit / Dimanche</option>
-    </select>
-  </div>
-</div>
+<div class="price" id="prix">CHF 120.–</div>
 
 <label>Numéro de devis</label>
 <input id="numDevis" readonly>
 
-<div class="price" id="prix">CHF –.–</div>
-<div class="detail" id="detail"></div>
-<div class="warning" id="warning"></div>
-
-<hr>
-
-<!-- CONTACT OPÉRATIONNEL -->
-<h3>Contact opérationnel</h3>
-<div class="row">
-  <div>
-    <label>Nom & Prénom</label>
-    <input id="clientNom">
-  </div>
-  <div>
-    <label>Téléphone</label>
-    <input id="clientTel">
-  </div>
-</div>
-
-<label>Email</label>
-<input id="clientEmail">
-
-<label>Adresse prise en charge</label>
-<input id="pickupAdr">
-
-<label>Adresse livraison</label>
-<input id="livAdr">
-
-<label>Nature du colis</label>
-<input id="nature">
-
-<label>Remarques</label>
-<textarea id="remarques"></textarea>
-
-<button onclick="envoyerEmail()">📧 Envoyer la commande</button>
-<button class="secondary" onclick="envoyerWhatsapp()">📱 WhatsApp</button>
-<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
-
-<p class="small">
-Prix indicatif – confirmation avant prise en charge • Devis numéroté automatiquement
-</p>
-
+<button onclick="envoyerCommande()">📧 Envoyer la commande</button>
+<button onclick="telechargerPDF()">📄 Télécharger le devis</button>
 </div>
 
 <script>
-// 🔗 URL GOOGLE APPS SCRIPT (TON URL)
+/* 🔗 URL GOOGLE APPS SCRIPT (LA TIENNE) */
 const GOOGLE_SHEET_URL =
-"https://script.google.com/macros/s/AKfycbydpMcr8wVElLVcpx_CZhLh57nfxdSnSxo37ozOVl4zR7Uyn8tIVJPEGNdrytYEiPTp/exec";
+"https://script.google.com/macros/s/AKfycbzLjES2LZv6UOfwjuvKqTycwfHrVFpyu21zUh8elwq-LfP5dn86YES-NSmBLblH1IIX/exec";
 
-/* ================= TARIFS ================= */
-function reglePoids(p){
-  if(p<=5) return {coef:1, sup:0};
-  if(p<=10) return {coef:1.1, sup:5};
-  if(p<=20) return {coef:1.25, sup:10};
-  if(p<=30) return {coef:1.4, sup:20};
-  return null;
-}
-function baseKm(km,service){
-  if(km<=10) return service==="Normal"?35:service==="Urgent"?55:75;
-  if(km<=30) return service==="Normal"?55:service==="Urgent"?85:115;
-  if(km<=80) return service==="Normal"?75:service==="Urgent"?115:155;
-  if(km<=150) return service==="Normal"?95:service==="Urgent"?145:195;
-  if(km<=300) return service==="Normal"?125:service==="Urgent"?185:245;
-  if(km<=600) return service==="Normal"?165:service==="Urgent"?245:325;
-  if(km<=1500) return service==="Normal"?205:service==="Urgent"?305:405;
-  return null;
-}
-
-/* ================= KM AUTO ================= */
-async function calculKm(){
-  if(!npaDepart.value||!npaArrivee.value) return;
-  kmStatus.textContent="Calcul distance…";
-
-  const geo = async npa=>{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa)}`);
-    const d=await r.json();
-    return d[0]?[d[0].lon,d[0].lat]:null;
-  };
-
-  const A=await geo(npaDepart.value);
-  const B=await geo(npaArrivee.value);
-  if(!A||!B){kmStatus.textContent="NPA invalide";return;}
-
-  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`);
-  const d=await r.json();
-  const kmCalc=Math.round(d.routes[0].distance/1000);
-
-  km.value=kmCalc;
-  kmStatus.textContent=`Distance : ${kmCalc} km`;
-
-  if(kmCalc>10){
-    interville.value="Oui";
-    interville.disabled=true;
-  }else{
-    interville.value="Non";
-    interville.disabled=false;
-  }
-  calculPrix();
-}
-
-/* ================= PRIX ================= */
-function calculPrix(){
-  warning.textContent="";
-  const k=Number(km.value), p=Number(poids.value);
-  if(!k||!p){prix.textContent="CHF –.–";return;}
-
-  const rp=reglePoids(p);
-  if(!rp){prix.textContent="DEVIS";warning.textContent="⚠️ Colis > 30 kg";return;}
-
-  let total=baseKm(k,service.value)*rp.coef+rp.sup;
-  if(horaire.value==="Nuit") total*=1.25;
-  if(interville.value==="Oui"&&k>10) total+=k*1.2;
-
-  total=Math.ceil(total/5)*5;
-  prix.textContent=`CHF ${total}.–`;
-  detail.textContent=`${k} km • ${p} kg • ${service.value.toUpperCase()}`;
-}
-
-/* ================= ENREGISTREMENT + N° DEVIS ================= */
+/* ================= ENREGISTREMENT + NUMÉRO ================= */
 async function enregistrerDevis(){
-  const res = await fetch(GOOGLE_SHEET_URL,{
-    method:"POST",
+
+  const response = await fetch(GOOGLE_SHEET_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      typeClient:typeClient.value,
-      societe:societe.value,
-      contact:contact.value,
-      reference:reference.value,
-      clientNom:clientNom.value,
-      clientTel:clientTel.value,
-      clientEmail:clientEmail.value,
-      km:km.value,
-      poids:poids.value,
-      prix:prix.textContent
+      clientNom: clientNom.value,
+      clientTel: clientTel.value,
+      km: km.value,
+      poids: poids.value,
+      prix: prix.textContent
     })
   });
-  const data = await res.json();
+
+  const data = await response.json();
+
+  if(data.error){
+    alert("Erreur Apps Script : " + data.error);
+    return null;
+  }
+
   numDevis.value = data.devis;
   return data.devis;
 }
 
 /* ================= EMAIL ================= */
-async function envoyerEmail(){
-  const devis = await enregistrerDevis();
-  const sujet = `Devis ${devis} – Léman Courses`;
-  const corps = `
-DEVIS ${devis}
+async function envoyerCommande(){
 
-Client : ${societe.value || clientNom.value}
-Contact : ${clientNom.value}
+  if(!clientNom.value || !clientTel.value){
+    alert("Nom et téléphone obligatoires");
+    return;
+  }
+
+  const devis = await enregistrerDevis();
+  if(!devis) return;
+
+  const sujet = `Devis ${devis} – Léman Courses`;
+  const corps =
+`DEVIS ${devis}
+
+Client : ${clientNom.value}
 Téléphone : ${clientTel.value}
 
-Trajet : ${km.value} km
+Distance : ${km.value} km
 Poids : ${poids.value} kg
-Service : ${service.value}
-Horaire : ${horaire.value}
-Inter-villes : ${interville.value}
+Prix : ${prix.textContent}
 
-PRIX : ${prix.textContent}
-`;
-  window.location.href="mailto:info@leman-courses.ch?subject="+encodeURIComponent(sujet)+"&body="+encodeURIComponent(corps);
-}
+Merci de votre confiance.
+Léman Courses`;
 
-/* ================= WHATSAPP ================= */
-function envoyerWhatsapp(){
-  window.open("https://wa.me/?text="+encodeURIComponent(`Devis ${numDevis.value} – ${prix.textContent}`));
+  window.location.href =
+    "mailto:info@leman-courses.ch" +
+    "?subject=" + encodeURIComponent(sujet) +
+    "&body=" + encodeURIComponent(corps);
 }
 
 /* ================= PDF ================= */
-async function genererPDF(){
+async function telechargerPDF(){
+
+  if(!clientNom.value || !clientTel.value){
+    alert("Nom et téléphone obligatoires");
+    return;
+  }
+
   const devis = await enregistrerDevis();
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
-  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.text(`Devis n° : ${devis}`,10,30);
-  pdf.text(`Client : ${societe.value || clientNom.value}`,10,38);
-  pdf.text(`Trajet : ${km.value} km`,10,46);
-  pdf.text(`Poids : ${poids.value} kg`,10,54);
-  pdf.text(`Prix : ${prix.textContent}`,10,70);
+  if(!devis) return;
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  pdf.setFontSize(16);
+  pdf.text("DEVIS – LÉMAN COURSES", 105, 20, { align: "center" });
+
+  pdf.setFontSize(11);
+  pdf.text(`Devis n° : ${devis}`, 10, 40);
+  pdf.text(`Client : ${clientNom.value}`, 10, 50);
+  pdf.text(`Téléphone : ${clientTel.value}`, 10, 60);
+  pdf.text(`Distance : ${km.value} km`, 10, 70);
+  pdf.text(`Poids : ${poids.value} kg`, 10, 80);
+  pdf.text(`Prix : ${prix.textContent}`, 10, 95);
+
+  pdf.setFontSize(9);
+  pdf.text(
+    "Prix indicatif – confirmation avant prise en charge.\nLéman Courses – Suisse romande",
+    10,
+    115
+  );
+
   pdf.save(`Devis_${devis}.pdf`);
 }
-
-/* ================= EVENTS ================= */
-[npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service,horaire,interville].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
 
 </body>
