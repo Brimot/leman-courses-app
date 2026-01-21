@@ -2,21 +2,18 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Devis</title>
+<title>Léman Courses – Commande</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
   font-family:Arial,Helvetica,sans-serif;
   background:#0B2A44;
-  color:#fff;
   padding:20px;
+  color:#fff;
 }
 .card{
-  max-width:720px;
+  max-width:700px;
   margin:auto;
   background:#fff;
   color:#000;
@@ -25,7 +22,7 @@ body{
 }
 h1{color:#0B2A44;margin-top:0}
 label{font-weight:bold;font-size:13px}
-input,button{
+input,select,button{
   width:100%;
   padding:10px;
   margin:6px 0 12px 0;
@@ -38,7 +35,7 @@ button{
   cursor:pointer;
 }
 .price{
-  font-size:28px;
+  font-size:26px;
   text-align:center;
   color:#0B2A44;
   margin:15px 0;
@@ -49,125 +46,73 @@ button{
 <body>
 
 <div class="card">
-<h1>LÉMAN COURSES – DEVIS</h1>
+<h1>Commande – Léman Courses</h1>
 
 <label>Nom du client</label>
-<input id="clientNom">
+<input id="nom">
 
 <label>Téléphone</label>
-<input id="clientTel">
+<input id="telephone">
 
-<label>Kilomètres</label>
-<input id="km" value="25">
+<label>Adresse de prise en charge</label>
+<input id="depart">
 
-<label>Poids du colis (kg)</label>
-<input id="poids" value="10">
+<label>Adresse de livraison</label>
+<input id="arrivee">
 
-<div class="price" id="prix">CHF 120.–</div>
+<label>Poids du colis</label>
+<select id="poids" onchange="calculerPrix()">
+  <option value="5">0 – 5 kg</option>
+  <option value="10">6 – 10 kg</option>
+  <option value="20">11 – 20 kg</option>
+  <option value="30">21 – 30 kg</option>
+</select>
 
-<label>Numéro de devis</label>
-<input id="numDevis" readonly>
+<div class="price" id="prix">CHF 25.–</div>
 
-<button onclick="envoyerCommande()">📧 Envoyer la commande</button>
-<button onclick="telechargerPDF()">📄 Télécharger le devis</button>
+<button onclick="envoyerCommande()">Envoyer la commande</button>
+
+<p id="retour"></p>
 </div>
 
 <script>
-/* 🔗 URL GOOGLE APPS SCRIPT (LA NOUVELLE) */
-const GOOGLE_SHEET_URL =
-"https://script.google.com/macros/s/AKfycbzB5ff5J1k1YU6EfglKkTRN2ub0NzsWmWle5FG4_8KtHQjq6DggsZXVTdyP3a0RT3qt/exec";
+const URL = "https://script.google.com/macros/s/AKfycby88Wpx7RoxGh_4iaoH66G5JfSri7HngXyBRJyiPSPS_fijMIw_pbqD7pjkviGeGHLi/exec";
 
-/* ================= ENREGISTREMENT + NUMÉRO ================= */
-async function enregistrerDevis(){
-
-  const response = await fetch(GOOGLE_SHEET_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clientNom: clientNom.value,
-      clientTel: clientTel.value,
-      km: km.value,
-      poids: poids.value,
-      prix: prix.textContent
-    })
-  });
-
-  const data = await response.json();
-
-  if(data.error){
-    alert("Erreur Apps Script : " + data.error);
-    return null;
-  }
-
-  numDevis.value = data.devis;
-  return data.devis;
+function calculerPrix(){
+  const p = Number(document.getElementById("poids").value);
+  let prix = 25;
+  if(p > 5) prix += 10;
+  if(p > 10) prix += 15;
+  if(p > 20) prix += 20;
+  document.getElementById("prix").innerText = "CHF " + prix + ".–";
 }
 
-/* ================= EMAIL ================= */
 async function envoyerCommande(){
+  document.getElementById("retour").innerText = "Envoi en cours…";
 
-  if(!clientNom.value || !clientTel.value){
-    alert("Nom et téléphone obligatoires");
-    return;
+  try{
+    const res = await fetch(URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        nom: nom.value,
+        telephone: telephone.value,
+        depart: depart.value,
+        arrivee: arrivee.value,
+        poids: poids.value,
+        prix: document.getElementById("prix").innerText
+      })
+    });
+
+    const txt = await res.text();
+    document.getElementById("retour").innerText = txt;
+
+  }catch(e){
+    document.getElementById("retour").innerText = "Erreur : " + e.message;
   }
-
-  const devis = await enregistrerDevis();
-  if(!devis) return;
-
-  const sujet = `Devis ${devis} – Léman Courses`;
-  const corps =
-`DEVIS ${devis}
-
-Client : ${clientNom.value}
-Téléphone : ${clientTel.value}
-
-Distance : ${km.value} km
-Poids : ${poids.value} kg
-Prix : ${prix.textContent}
-
-Merci de votre confiance.
-Léman Courses`;
-
-  window.location.href =
-    "mailto:info@leman-courses.ch" +
-    "?subject=" + encodeURIComponent(sujet) +
-    "&body=" + encodeURIComponent(corps);
 }
 
-/* ================= PDF ================= */
-async function telechargerPDF(){
-
-  if(!clientNom.value || !clientTel.value){
-    alert("Nom et téléphone obligatoires");
-    return;
-  }
-
-  const devis = await enregistrerDevis();
-  if(!devis) return;
-
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-
-  pdf.setFontSize(16);
-  pdf.text("DEVIS – LÉMAN COURSES", 105, 20, { align: "center" });
-
-  pdf.setFontSize(11);
-  pdf.text(`Devis n° : ${devis}`, 10, 40);
-  pdf.text(`Client : ${clientNom.value}`, 10, 50);
-  pdf.text(`Téléphone : ${clientTel.value}`, 10, 60);
-  pdf.text(`Distance : ${km.value} km`, 10, 70);
-  pdf.text(`Poids : ${poids.value} kg`, 10, 80);
-  pdf.text(`Prix : ${prix.textContent}`, 10, 95);
-
-  pdf.setFontSize(9);
-  pdf.text(
-    "Prix indicatif – confirmation avant prise en charge.\nLéman Courses – Suisse romande",
-    10,
-    115
-  );
-
-  pdf.save(`Devis_${devis}.pdf`);
-}
+calculerPrix();
 </script>
 
 </body>
