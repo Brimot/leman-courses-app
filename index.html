@@ -245,30 +245,35 @@ function loadImage(url){
   });
 }
 
-async function genererPDF(){
-  const {jsPDF} = window.jspdf;
-  const pdf = new jsPDF();
+async function envoyerEmail() {
 
-  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.text(`Client : ${clientNom.value}`,10,30);
-  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,38);
-  pdf.text(`Distance : ${km.value}`,10,46);
-  pdf.text("Temps indicatif selon conditions de circulation.",10,52);
-  pdf.text(`Prix : ${prix.textContent}`,10,60);
+  const data = {
+    clientNom: clientNom.value,
+    clientTel: clientTel.value,
+    clientEmail: clientEmail.value,
+    npaDepart: npaDepart.value,
+    npaArrivee: npaArrivee.value,
+    adrDepart: adrDepart.value,
+    adrArrivee: adrArrivee.value,
+    distance: km.value,
+    duree: topInfo.textContent,
+    poids: poids.value,
+    service: service.value,
+    typeCourse: isInterville ? "Inter-villes" : "Locale",
+    prix: prix.textContent,
+    remarques: remarques.value
+  };
 
-  const mapUrl =
-    `https://staticmap.openstreetmap.de/staticmap.php?size=600x300`+
-    `&markers=${coordA[1]},${coordA[0]},red|${coordB[1]},${coordB[0]},blue`+
-    `&path=weight:3|color:red|${coordA[1]},${coordA[0]}|${coordB[1]},${coordB[0]}`;
+  await fetch(
+    "https://script.google.com/macros/s/AKfycbz6N8J6gJRjLJhj3mIP6wf1kVvoloBsZKYSKBSWkOd3hywU2kEtUpOvxg83D8LXR_D-/exec",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    }
+  );
 
-  try{
-    const img = await loadImage(mapUrl);
-    pdf.addImage(img,"PNG",10,70,190,90);
-  }catch(e){
-    pdf.text("Carte indisponible",10,80);
-  }
-
-  pdf.save("Devis_Leman_Courses.pdf");
+  alert("✅ Commande envoyée avec succès !");
 }
 
 /* ================= EVENTS ================= */
