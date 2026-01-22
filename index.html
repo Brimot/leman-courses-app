@@ -16,7 +16,7 @@ body{
   padding:20px;
 }
 .card{
-  max-width:700px;
+  max-width:720px;
   margin:auto;
   background:#fff;
   padding:20px;
@@ -33,7 +33,7 @@ input,select,textarea,button{
   border-radius:8px;
   border:1px solid #ccc;
 }
-textarea{min-height:60px;}
+textarea{min-height:70px;}
 button{
   background:#0B2A44;
   color:#fff;
@@ -99,13 +99,6 @@ button{
       <option value="Nuit">Nuit / Dimanche</option>
     </select>
   </div>
-  <div>
-    <label>Inter-villes</label>
-    <select id="interville">
-      <option value="Non">Non</option>
-      <option value="Oui">Oui</option>
-    </select>
-  </div>
 </div>
 
 <div class="price" id="prix">CHF –.–</div>
@@ -144,7 +137,10 @@ button{
 </div>
 
 <script>
-// ========= TARIFS =========
+// =================== VARIABLES INTERNES ===================
+let isInterville = false;
+
+// =================== TARIFS ===================
 function coefPoids(p){
   if(p<=5) return 1;
   if(p<=10) return 1.1;
@@ -162,47 +158,83 @@ function baseKm(km,service){
   return 205;
 }
 
-// ========= KM + DURÉE =========
+// =================== INTER-VILLES AUTO ===================
+function updateInterville(km){
+  isInterville = km > 10;
+}
+
+// =================== KM + DURÉE ===================
 async function calculKm(){
   if(!npaDepart.value||!npaArrivee.value) return;
+
   const geo=async npa=>{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
-    const d=await r.json(); return d[0]?[d[0].lon,d[0].lat]:null;
+    const r=await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa)}`
+    );
+    const d=await r.json();
+    return d[0]?[d[0].lon,d[0].lat]:null;
   };
+
   const A=await geo(npaDepart.value);
   const B=await geo(npaArrivee.value);
   if(!A||!B){kmInfo.textContent="NPA invalide";return;}
-  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`);
+
+  const r=await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`
+  );
   const d=await r.json();
+
   const kmCalc=Math.round(d.routes[0].distance/1000);
   const min=Math.round(d.routes[0].duration/60);
+
   km.value=kmCalc;
   kmInfo.textContent=`${kmCalc} km – ${Math.floor(min/60)}h${min%60}`;
+
+  updateInterville(kmCalc);
   calculPrix();
 }
 
-// ========= PRIX =========
+// =================== PRIX ===================
 function calculPrix(){
   warning.textContent="";
   const k=Number(km.value);
   const p=Number(poids.value);
   if(!k||!p){prix.textContent="CHF –.–";return;}
+
   const coef=coefPoids(p);
-  if(!coef){prix.textContent="DEVIS";warning.textContent="Colis > 30 kg";return;}
+  if(!coef){
+    prix.textContent="DEVIS";
+    warning.textContent="Colis > 30 kg – devis spécial";
+    return;
+  }
+
   let total=baseKm(k,service.value)*coef;
+
   if(horaire.value==="Nuit") total*=1.25;
-  if(interville.value==="Oui"&&k>10) total+=k*1.2;
+  if(isInterville) total+=k*1.2;
+
   total=Math.ceil(total/5)*5;
+
   const ht=total/1.081;
   const tva=total-ht;
+
+  const interTxt = isInterville
+    ? "Course inter-villes (> 10 km)"
+    : "Course locale (≤ 10 km)";
+
   prix.textContent=`CHF ${total.toFixed(0)}.–`;
-  prixDetail.textContent=`HT ${ht.toFixed(2)} CHF | TVA 8.1 % ${tva.toFixed(2)} CHF`;
+  prixDetail.textContent=
+    `${k} km • ${p} kg • ${service.value.toUpperCase()} • ${interTxt} | HT ${ht.toFixed(2)} CHF + TVA 8.1 % ${tva.toFixed(2)} CHF`;
 }
 
-// ========= EMAIL =========
+// =================== EMAIL ===================
 function envoyerEmail(){
-  if(!clientNom.value||!clientTel.value){alert("Nom et téléphone requis");return;}
-  const body=`COMMANDE LÉMAN COURSES
+  if(!clientNom.value||!clientTel.value){
+    alert("Nom et téléphone requis");
+    return;
+  }
+
+  const body=`COMMANDE – LÉMAN COURSES
 
 Client : ${clientNom.value}
 Téléphone : ${clientTel.value}
@@ -210,38 +242,56 @@ Email : ${clientEmail.value}
 
 Trajet : ${npaDepart.value} → ${npaArrivee.value}
 Distance : ${km.value} km
+Type : ${isInterville ? "Inter-villes" : "Locale"}
 Poids : ${poids.value} kg
 Service : ${service.value}
+Horaire : ${horaire.value}
 
 Prix : ${prix.textContent}
 
-Adresse départ : ${adrDepart.value}
-Adresse arrivée : ${adrArrivee.value}
+Adresse départ :
+${adrDepart.value}
+
+Adresse livraison :
+${adrArrivee.value}
 
 Remarques :
 ${remarques.value}`;
-  window.location.href=`mailto:info@leman-courses.ch?subject=Commande transport&body=${encodeURIComponent(body)}`;
+
+  window.location.href=
+    `mailto:info@leman-courses.ch?subject=Commande transport&body=${encodeURIComponent(body)}`;
 }
 
-// ========= PDF =========
+// =================== PDF ===================
 function genererPDF(){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
+
+  let y=15;
   pdf.setFontSize(16);
-  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
+  pdf.text("DEVIS – LÉMAN COURSES",105,y,{align:"center"});
+  y+=10;
+
   pdf.setFontSize(10);
-  pdf.text(`Client : ${clientNom.value}`,10,35);
-  pdf.text(`Téléphone : ${clientTel.value}`,10,42);
-  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,52);
-  pdf.text(`Distance : ${km.value} km`,10,59);
-  pdf.text(`Poids : ${poids.value} kg`,10,66);
-  pdf.text(`Prix TTC : ${prix.textContent}`,10,76);
+  pdf.text(`Client : ${clientNom.value}`,10,y); y+=6;
+  pdf.text(`Téléphone : ${clientTel.value}`,10,y); y+=6;
+  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,y); y+=6;
+  pdf.text(`Distance : ${km.value} km`,10,y); y+=6;
+  pdf.text(`Type : ${isInterville ? "Inter-villes (>10 km)" : "Locale (≤10 km)"}`,10,y); y+=6;
+  pdf.text(`Poids : ${poids.value} kg`,10,y); y+=6;
+  pdf.text(`Service : ${service.value}`,10,y); y+=6;
+  pdf.text(`Prix TTC : ${prix.textContent}`,10,y);
+
+  y+=10;
+  pdf.setFontSize(9);
+  pdf.text("Prix indicatif – TVA 8.1 % incluse",10,y);
+
   pdf.save("Devis_Leman_Courses.pdf");
 }
 
-// ========= EVENTS =========
+// =================== EVENTS ===================
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service,horaire,interville].forEach(e=>e.addEventListener("input",calculPrix));
+[poids,service,horaire].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
 
 </body>
