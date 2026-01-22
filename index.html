@@ -12,7 +12,9 @@
 body{font-family:Arial;background:#0B2A44;padding:20px;margin:0}
 .card{max-width:820px;margin:auto;background:#fff;padding:20px;border-radius:14px}
 h1{text-align:center;color:#0B2A44;margin:0}
-.sub{text-align:center;font-size:13px;color:#666;margin-bottom:15px}
+.sub{text-align:center;font-size:13px;color:#666;margin-bottom:10px}
+.badges{text-align:center;font-size:12px;color:#0B2A44;margin-bottom:15px}
+.badges span{margin:0 6px;font-weight:bold}
 label{font-weight:bold;font-size:13px}
 input,select,textarea,button{
   width:100%;padding:12px;margin-top:6px;margin-bottom:12px;
@@ -41,6 +43,11 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 
 <h1>LÉMAN COURSES</h1>
 <div class="sub">Transport express – Suisse romande</div>
+<div class="badges">
+  <span>✔ Commercialement saine</span>
+  <span>✔ Juridiquement propre</span>
+  <span>✔ Techniquement stable</span>
+</div>
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
 <div class="small">Temps donné à titre indicatif selon les conditions de circulation</div>
@@ -89,7 +96,9 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 
 <button onclick="envoyerWhatsApp()">💬 Envoyer la commande via WhatsApp</button>
 
-<p class="small">TVA 8.1 % incluse • Minimum de course 25 CHF</p>
+<p class="small">
+TVA 8.1 % incluse • Minimum de course 25 CHF • Validation finale avant prise en charge
+</p>
 </div>
 
 <!-- POPUP CARTE -->
@@ -133,7 +142,7 @@ function remiseClient(code){
   return 0;
 }
 
-/* ===== KM + DURÉE ===== */
+/* ===== DISTANCE & DURÉE ===== */
 async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
@@ -172,15 +181,15 @@ function calculPrix(k){
   }
 
   let t = baseKm(k);
-  t = t * coefService(service.value);
-  t = t * cP;
+  t *= coefService(service.value);
+  t *= cP;
   if(isInterville) t += k * 0.5;
-  t = t * 0.9;
+  t *= 0.9; // -10 %
 
   let infoRemise = "";
   const r = remiseClient(codeClient.value);
   if(r > 0){
-    t = t * (1 - r);
+    t *= (1 - r);
     infoRemise = ` • remise ${Math.round(r*100)}% (à valider)`;
   }
 
