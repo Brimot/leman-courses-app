@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Commande</title>
+<title>Léman Courses – Calculateur</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -12,7 +12,7 @@ body{
   padding:20px;
 }
 .card{
-  max-width:520px;
+  max-width:560px;
   margin:auto;
   background:#fff;
   border-radius:16px;
@@ -34,10 +34,26 @@ button{
   margin-top:16px;
   cursor:pointer;
 }
+#map{
+  height:300px;
+  margin-top:16px;
+  border-radius:12px;
+}
+.info{
+  margin-top:10px;
+  font-size:14px;
+}
+.price{
+  font-size:26px;
+  font-weight:bold;
+  text-align:center;
+  margin-top:12px;
+  color:#0b2a44;
+}
 .note{
   font-size:12px;
   color:#666;
-  margin-top:10px;
+  text-align:center;
 }
 </style>
 </head>
@@ -47,67 +63,129 @@ button{
 <div class="card">
 <h1>LÉMAN COURSES</h1>
 
-<form id="orderForm">
-
 <label>Nom & Prénom</label>
-<input required id="clientNom">
+<input id="clientNom">
 
 <label>Téléphone</label>
-<input required id="clientTel">
-
-<label>Email</label>
-<input type="email" id="clientEmail">
+<input id="clientTel">
 
 <label>Adresse de départ</label>
-<input required id="adrDepart">
+<input id="depart">
 
 <label>Adresse de livraison</label>
-<input required id="adrArrivee">
+<input id="arrivee">
 
 <label>Poids du colis (kg)</label>
-<input type="number" id="poids" min="1" max="30" required>
+<input type="number" id="poids" min="1" max="30" value="5">
 
 <label>Service</label>
 <select id="service">
-  <option value="Normal">Normal</option>
-  <option value="Urgent">Urgent</option>
-  <option value="Express">Express</option>
+  <option value="normal">Normal</option>
+  <option value="urgent">Urgent</option>
+  <option value="express">Express</option>
 </select>
 
-<label>Remarques</label>
-<textarea id="remarques"></textarea>
+<button onclick="calculer()">Calculer</button>
 
-<button type="submit">Envoyer la commande</button>
+<div id="map"></div>
+
+<div class="info" id="resume"></div>
+<div class="price" id="prix"></div>
+
+<button onclick="envoyerWhatsApp()">Envoyer via WhatsApp</button>
 
 <p class="note">
-Prix indicatif – confirmation avant prise en charge
+Temps et distance donnés à titre indicatif selon les conditions de circulation
 </p>
-
-</form>
 </div>
 
 <script>
-document.getElementById("orderForm").addEventListener("submit", async e=>{
-  e.preventDefault();
+let map, directionsService, directionsRenderer;
+let distanceKm = 0;
+let dureeTxt = "";
 
-  const data = {
-    clientNom: clientNom.value,
-    clientTel: clientTel.value,
-    clientEmail: clientEmail.value,
-    adrDepart: adrDepart.value,
-    adrArrivee: adrArrivee.value,
-    poids: poids.value,
-    service: service.value,
-    remarques: remarques.value
-  };
-
-  await fetch("https://script.google.com/macros/s/AKfycbz6N8J6gJRjLJhj3mIP6wf1kVvoloBsZKYSKBSWkOd3hywU2kEtUpOvxg83D8LXR_D-/exec",{
-    method:"POST",
-    body: JSON.stringify(data)
+function initMap(){
+  map = new google.maps.Map(document.getElementById("map"),{
+    zoom:7,
+    center:{lat:46.2,lng:6.1}
   });
+  directionsService = new google.maps.DirectionsService();
+  directionsRenderer = new google.maps.DirectionsRenderer({map});
+}
 
-  alert("Commande envoyée ✔️\nUn email + WhatsApp sont prêts");
-});
+function calculer(){
+  const depart = document.getElementById("depart").value;
+  const arrivee = document.getElementById("arrivee").value;
+  if(!depart || !arrivee) return alert("Adresse manquante");
+
+  directionsService.route({
+    origin: depart,
+    destination: arrivee,
+    travelMode: "DRIVING"
+  },(res,status)=>{
+    if(status==="OK"){
+      directionsRenderer.setDirections(res);
+      const leg = res.routes[0].legs[0];
+      distanceKm = leg.distance.value / 1000;
+      dureeTxt = leg.duration.text;
+      calculPrix();
+    }
+  });
+}
+
+function calculPrix(){
+  const service = document.getElementById("service").value;
+  const poids = Number(document.getElementById("poids").value);
+
+  if(poids > 30){
+    document.getElementById("prix").innerText = "Sur devis";
+    return;
+  }
+
+  let base = distanceKm * 1.2; // CHF / km
+  if(service==="urgent") base *= 1.3;
+  if(service==="express") base *= 1.6;
+  if(poids > 10) base *= 1.2;
+
+  base = Math.round(base/5)*5;
+
+  document.getElementById("resume").innerText =
+    `Distance : ${distanceKm.toFixed(1)} km – Temps : ${dureeTxt}`;
+
+  document.getElementById("prix").innerText = `CHF ${base}.-`;
+}
+
+function envoyerWhatsApp(){
+  const msg =
+`🚚 LÉMAN COURSES
+
+Client : ${clientNom.value}
+Tel : ${clientTel.value}
+
+Départ :
+${depart.value}
+
+Arrivée :
+${arrivee.value}
+
+Distance : ${distanceKm.toFixed(1)} km
+Temps : ${dureeTxt}
+
+Service : ${service.value}
+Poids : ${poids.value} kg
+
+Prix indicatif : ${prix.innerText}
+`;
+
+  window.open(
+    "https://wa.me/41796467442?text=" + encodeURIComponent(msg),
+    "_blank"
+  );
+}
+</script>
+
+<script async
+src="https://maps.googleapis.com/maps/api/js?key=TA_CLE_GOOGLE_MAPS&callback=initMap">
 </script>
 
 </body>
