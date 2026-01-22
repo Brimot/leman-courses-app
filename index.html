@@ -23,6 +23,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .small{text-align:center;font-size:11px;color:#666}
 .warning{text-align:center;color:red;font-weight:bold}
+.note{text-align:center;font-size:12px;color:#444;margin-top:8px}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
 
 #mapPopup{
@@ -46,7 +47,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <div class="sub">Transport express – Suisse romande</div>
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
-<div class="small">Temps donné à titre indicatif selon conditions de circulation</div>
+<div class="small">Temps donné à titre indicatif selon les conditions de circulation.</div>
 
 <div class="row">
   <div><label>NPA départ</label><input id="npaDepart"></div>
@@ -69,6 +70,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 </div>
 
 <div class="price" id="prix">CHF –.–</div>
+<div class="note">Tarif indicatif – ajustable selon contraintes réelles</div>
 <div class="small" id="prixDetail"></div>
 <div class="warning" id="warning"></div>
 
@@ -102,22 +104,24 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 let coordA, coordB, routeGeo, map, routeLayer;
 let dureeMin = 0, isInterville=false;
 
+/* ===== TARIFS AJUSTÉS (-60% puis -10%) ===== */
 function coefPoids(p){
   if(p<=5) return 1;
-  if(p<=10) return 1.1;
-  if(p<=20) return 1.25;
-  if(p<=30) return 1.4;
+  if(p<=10) return 1.05;
+  if(p<=20) return 1.12;
+  if(p<=30) return 1.2;
   return null;
 }
 function baseKm(km,s){
-  if(km<=10) return s==="Normal"?35:s==="Urgent"?55:75;
-  if(km<=30) return s==="Normal"?55:s==="Urgent"?85:115;
-  if(km<=80) return s==="Normal"?75:s==="Urgent"?115:155;
-  if(km<=150) return s==="Normal"?95:s==="Urgent"?145:195;
-  if(km<=300) return s==="Normal"?125:s==="Urgent"?185:245;
-  return 165;
+  if(km<=10)  return s==="Normal"?22:s==="Urgent"?32:42;
+  if(km<=30)  return s==="Normal"?35:s==="Urgent"?50:65;
+  if(km<=80)  return s==="Normal"?55:s==="Urgent"?75:95;
+  if(km<=150) return s==="Normal"?75:s==="Urgent"?100:125;
+  if(km<=300) return s==="Normal"?95:s==="Urgent"?125:155;
+  return 120;
 }
 
+/* ===== KM + DURÉE ===== */
 async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
@@ -144,13 +148,16 @@ async function calculKm(){
   calculPrix(kmCalc);
 }
 
+/* ===== PRIX ===== */
 function calculPrix(k){
   const p=Number(poids.value);
   const c=coefPoids(p);
   if(!c){prix.textContent="DEVIS";warning.textContent="Colis > 30 kg";return;}
 
   let t=baseKm(k,service.value)*c;
-  if(isInterville) t+=k*1.2;
+  if(isInterville) t+=k*0.6;
+
+  t = t * 0.9; // -10 % global
   t=Math.ceil(t/5)*5;
 
   prix.textContent=`CHF ${t}.–`;
@@ -158,6 +165,7 @@ function calculPrix(k){
   warning.textContent="";
 }
 
+/* ===== CARTE ===== */
 function openMap(){
   mapPopup.style.display="block";
   setTimeout(()=>{
@@ -175,6 +183,7 @@ function openMap(){
 }
 function closeMap(){mapPopup.style.display="none";}
 
+/* ===== WHATSAPP ===== */
 function envoyerWhatsApp(){
   const msg=
 `🚚 LÉMAN COURSES
@@ -190,7 +199,7 @@ Service : ${service.value}
 Poids : ${poids.value} kg
 Type : ${isInterville?"Inter-villes":"Locale"}
 
-Prix : ${prix.textContent}
+Prix indicatif : ${prix.textContent}
 
 Colis : ${nature.value}
 Remarques : ${remarques.value}`;
