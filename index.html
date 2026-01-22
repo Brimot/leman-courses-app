@@ -5,10 +5,6 @@
 <title>Léman Courses – Devis transport</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -50,9 +46,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <div class="sub">Transport express – Suisse romande</div>
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
-<div class="small">
-Temps de trajet donné à titre indicatif selon les conditions de circulation.
-</div>
+<div class="small">Temps donné à titre indicatif selon conditions de circulation</div>
 
 <div class="row">
   <div><label>NPA départ</label><input id="npaDepart"></div>
@@ -87,14 +81,12 @@ Temps de trajet donné à titre indicatif selon les conditions de circulation.
   <div><label>Nom</label><input id="clientNom"></div>
   <div><label>Téléphone</label><input id="clientTel"></div>
 </div>
-<label>Email</label><input id="clientEmail">
 <label>Adresse départ</label><input id="adrDepart">
 <label>Adresse arrivée</label><input id="adrArrivee">
 <label>Nature du colis</label><input id="nature">
 <label>Remarques</label><textarea id="remarques"></textarea>
 
-<button onclick="envoyerEmail()">📧 Envoyer la commande</button>
-<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
+<button onclick="envoyerWhatsApp()">💬 Envoyer la commande via WhatsApp</button>
 
 <p class="small">TVA 8.1 % incluse</p>
 </div>
@@ -107,13 +99,9 @@ Temps de trajet donné à titre indicatif selon les conditions de circulation.
 </div>
 
 <script>
-/* ================= VARIABLES ================= */
-let coordA, coordB, routeGeo;
-let dureeMin = 0;
-let isInterville = false;
-let map, routeLayer;
+let coordA, coordB, routeGeo, map, routeLayer;
+let dureeMin = 0, isInterville=false;
 
-/* ================= TARIFS ================= */
 function coefPoids(p){
   if(p<=5) return 1;
   if(p<=10) return 1.1;
@@ -130,98 +118,72 @@ function baseKm(km,s){
   return 165;
 }
 
-/* ================= KM + DURÉE ================= */
 async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
-  const geo = async npa => {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`
-    );
-    const d = await r.json();
-    return d[0] ? [d[0].lon, d[0].lat] : null;
+  const geo = async npa =>{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
+    const d=await r.json();return d[0]?[d[0].lon,d[0].lat]:null;
   };
 
-  coordA = await geo(npaDepart.value);
-  coordB = await geo(npaArrivee.value);
-  if(!coordA || !coordB) return;
+  coordA=await geo(npaDepart.value);
+  coordB=await geo(npaArrivee.value);
+  if(!coordA||!coordB) return;
 
-  const r = await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`
-  );
-  const d = await r.json();
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
+  const d=await r.json();
 
-  const kmCalc = Math.round(d.routes[0].distance/1000);
-  dureeMin = Math.round(d.routes[0].duration/60);
+  const kmCalc=Math.round(d.routes[0].distance/1000);
+  dureeMin=Math.round(d.routes[0].duration/60);
+  routeGeo=d.routes[0].geometry;
+  isInterville=kmCalc>10;
 
-  routeGeo = d.routes[0].geometry;
-  isInterville = kmCalc > 10;
-
-  km.value = `${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-  topInfo.textContent =
-    `Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-
-  btnMap.style.display = "block";
+  km.value=`${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  topInfo.textContent=`Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  btnMap.style.display="block";
   calculPrix(kmCalc);
 }
 
-/* ================= PRIX ================= */
 function calculPrix(k){
-  const p = Number(poids.value);
-  if(!k || !p){prix.textContent="CHF –.–";return;}
+  const p=Number(poids.value);
+  const c=coefPoids(p);
+  if(!c){prix.textContent="DEVIS";warning.textContent="Colis > 30 kg";return;}
 
-  const c = coefPoids(p);
-  if(!c){
-    prix.textContent="DEVIS";
-    warning.textContent="Colis > 30 kg : devis spécial";
-    return;
-  }
+  let t=baseKm(k,service.value)*c;
+  if(isInterville) t+=k*1.2;
+  t=Math.ceil(t/5)*5;
 
-  let t = baseKm(k, service.value) * c;
-  if(isInterville) t += k * 1.2;
-
-  t = Math.ceil(t/5)*5;
-  const ht = t / 1.081;
-  const tva = t - ht;
-
-  prix.textContent = `CHF ${t}.–`;
-  prixDetail.textContent = `HT ${ht.toFixed(2)} + TVA ${tva.toFixed(2)}`;
-  warning.textContent = "";
+  prix.textContent=`CHF ${t}.–`;
+  prixDetail.textContent=isInterville?"Inter-villes":"Locale";
+  warning.textContent="";
 }
 
-/* ================= MAP ================= */
 function openMap(){
   mapPopup.style.display="block";
   setTimeout(()=>{
     if(!map){
-      map = L.map("map");
+      map=L.map("map");
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
     }
     if(routeLayer) map.removeLayer(routeLayer);
-    routeLayer = L.geoJSON(routeGeo,{style:{color:"red",weight:4}}).addTo(map);
+    routeLayer=L.geoJSON(routeGeo,{style:{color:"red",weight:4}}).addTo(map);
     map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
-
     L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
     L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
-
-    mapInfo.textContent =
-      `${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
+    mapInfo.textContent=`${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
   },200);
 }
 function closeMap(){mapPopup.style.display="none";}
 
-/* ================= EMAIL ================= */
-function envoyerEmail(){
-  const body = `
-COMMANDE – LÉMAN COURSES
+function envoyerWhatsApp(){
+  const msg=
+`🚚 LÉMAN COURSES
 
 Client : ${clientNom.value}
 Téléphone : ${clientTel.value}
-Email : ${clientEmail.value}
 
-Trajet : ${npaDepart.value} → ${npaArrivee.value}
-Adresse départ : ${adrDepart.value}
-Adresse arrivée : ${adrArrivee.value}
+Départ : ${adrDepart.value}
+Arrivée : ${adrArrivee.value}
 
 Distance : ${km.value}
 Service : ${service.value}
@@ -231,50 +193,13 @@ Type : ${isInterville?"Inter-villes":"Locale"}
 Prix : ${prix.textContent}
 
 Colis : ${nature.value}
-Remarques : ${remarques.value}
-`;
-  window.location.href =
-    `mailto:info@leman-courses.ch?subject=Commande Léman Courses&body=${encodeURIComponent(body)}`;
+Remarques : ${remarques.value}`;
+
+  window.open("https://wa.me/41796467442?text="+encodeURIComponent(msg),"_blank");
 }
 
-/* ================= PDF ================= */
-function loadImage(url){
-  return new Promise((res,rej)=>{
-    const i=new Image();i.crossOrigin="Anonymous";
-    i.onload=()=>res(i);i.onerror=rej;i.src=url;
-  });
-}
-
-async function genererPDF(){
-  const {jsPDF} = window.jspdf;
-  const pdf = new jsPDF();
-
-  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.text(`Client : ${clientNom.value}`,10,30);
-  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,38);
-  pdf.text(`Distance : ${km.value}`,10,46);
-  pdf.text("Temps indicatif selon conditions de circulation.",10,52);
-  pdf.text(`Prix : ${prix.textContent}`,10,60);
-
-  const mapUrl =
-    `https://staticmap.openstreetmap.de/staticmap.php?size=600x300`+
-    `&markers=${coordA[1]},${coordA[0]},red|${coordB[1]},${coordB[0]},blue`+
-    `&path=weight:3|color:red|${coordA[1]},${coordA[0]}|${coordB[1]},${coordB[0]}`;
-
-  try{
-    const img = await loadImage(mapUrl);
-    pdf.addImage(img,"PNG",10,70,190,90);
-  }catch(e){
-    pdf.text("Carte indisponible",10,80);
-  }
-
-  pdf.save("Devis_Leman_Courses.pdf");
-}
-
-/* ================= EVENTS ================= */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service].forEach(e=>e.addEventListener("input",()=>calculPrix(parseInt(km.value))));
+[poids,service].forEach(()=>calculPrix(parseInt(km.value)));
 </script>
-
 </body>
 </html>
