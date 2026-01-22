@@ -114,16 +114,22 @@ function calculer() {
 }
 
 async function envoyer() {
+
   const data = {
     clientNom: clientNom.value,
     clientTel: clientTel.value,
     clientEmail: clientEmail.value,
     npaDepart: npaDepart.value,
     npaArrivee: npaArrivee.value,
-    distance: km.value + " km",
-    poids: poids.value + " kg",
+    adrDepart: adrDepart.value,
+    adrArrivee: adrArrivee.value,
+    distance: km.value,
+    duree: topInfo.textContent,
+    poids: poids.value,
     service: service.value,
-    prix: prixDiv.textContent
+    typeCourse: isInterville ? "Inter-villes" : "Locale",
+    prix: prix.textContent,
+    remarques: remarques.value
   };
 
   try {
@@ -135,14 +141,15 @@ async function envoyer() {
       }
     );
 
-    const result = await response.text();
+    const txt = await response.text();
     alert("✅ Commande envoyée avec succès");
 
-  } catch (err) {
+  } catch (e) {
+    console.error(e);
     alert("❌ Erreur lors de l’envoi");
-    console.error(err);
   }
 }
+
 
 
 /* références */
