@@ -26,12 +26,8 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 .note{text-align:center;font-size:12px;color:#444;margin-top:8px}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
 
-#mapPopup{
-  display:none;position:fixed;inset:0;background:#000000cc;z-index:9999
-}
-#mapHeader{
-  background:#fff;padding:14px;font-weight:bold;cursor:pointer
-}
+#mapPopup{display:none;position:fixed;inset:0;background:#000000cc;z-index:9999}
+#mapHeader{background:#fff;padding:14px;font-weight:bold;cursor:pointer}
 #map{width:100%;height:100%}
 .mapInfo{
   position:absolute;top:60px;left:50%;transform:translateX(-50%);
@@ -69,6 +65,9 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
   </div>
 </div>
 
+<label>Code client (facultatif)</label>
+<input id="codeClient" placeholder="Ex : LC-PRO-15">
+
 <div class="price" id="prix">CHF –.–</div>
 <div class="note">Tarif indicatif – ajustable selon contraintes réelles</div>
 <div class="small" id="prixDetail"></div>
@@ -90,7 +89,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 
 <button onclick="envoyerWhatsApp()">💬 Envoyer la commande via WhatsApp</button>
 
-<p class="small">TVA 8.1 % incluse</p>
+<p class="small">TVA 8.1 % incluse • Minimum de course 25 CHF</p>
 </div>
 
 <!-- POPUP CARTE -->
@@ -124,6 +123,14 @@ function coefPoids(p){
   if(p <= 20) return 1.12;
   if(p <= 30) return 1.2;
   return null;
+}
+function remiseClient(code){
+  if(!code) return 0;
+  code = code.toUpperCase().trim();
+  if(code === "LC-PRO-10") return 0.10;
+  if(code === "LC-PRO-15") return 0.15;
+  if(code === "LC-VIP")    return 0.20;
+  return 0;
 }
 
 /* ===== KM + DURÉE ===== */
@@ -168,13 +175,21 @@ function calculPrix(k){
   t = t * coefService(service.value);
   t = t * cP;
   if(isInterville) t += k * 0.5;
-  t = t * 0.9; // -10 %
+  t = t * 0.9;
+
+  let infoRemise = "";
+  const r = remiseClient(codeClient.value);
+  if(r > 0){
+    t = t * (1 - r);
+    infoRemise = ` • remise ${Math.round(r*100)}% (à valider)`;
+  }
 
   if(t < 25) t = 25;
   t = Math.ceil(t / 5) * 5;
 
   prix.textContent = `CHF ${t}.–`;
-  prixDetail.textContent = `${service.value} • ${isInterville ? "Inter-villes" : "Locale"} • min. 25 CHF`;
+  prixDetail.textContent =
+    `${service.value} • ${isInterville ? "Inter-villes" : "Locale"}${infoRemise}`;
   warning.textContent = "";
 }
 
@@ -191,7 +206,8 @@ function openMap(){
     map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
     L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
     L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
-    mapInfo.textContent = `${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
+    mapInfo.textContent =
+      `${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
   },200);
 }
 function closeMap(){mapPopup.style.display="none";}
@@ -203,6 +219,8 @@ function envoyerWhatsApp(){
 
 Client : ${clientNom.value}
 Téléphone : ${clientTel.value}
+
+Code client : ${codeClient.value || "—"} (à valider)
 
 Départ : ${adrDepart.value}
 Arrivée : ${adrArrivee.value}
@@ -222,7 +240,7 @@ Remarques : ${remarques.value}`;
 
 /* ===== EVENTS ===== */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service].forEach(()=>calculPrix(parseInt(km.value)));
+[poids,service,codeClient].forEach(e=>e.addEventListener("input",()=>calculPrix(parseInt(km.value))));
 </script>
 
 </body>
