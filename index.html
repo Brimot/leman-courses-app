@@ -2,143 +2,127 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Léman Courses – Transport express</title>
+<title>Léman Courses – Devis transport</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
   font-family:Arial,Helvetica,sans-serif;
   background:#0B2A44;
+  margin:0;
   padding:20px;
 }
 .card{
-  max-width:680px;
+  max-width:700px;
   margin:auto;
   background:#fff;
-  border-radius:18px;
   padding:20px;
+  border-radius:14px;
 }
-h1{text-align:center;color:#0B2A44;margin:0}
-.subtitle{text-align:center;font-size:13px;color:#555;margin-bottom:20px}
-
-label{font-size:13px;font-weight:bold}
-input,select,textarea{
-  width:100%;
-  padding:10px;
-  margin:6px 0 12px 0;
-}
-textarea{min-height:70px}
-.row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-.price{
-  text-align:center;
-  font-size:30px;
-  color:#0B2A44;
-  margin:10px 0;
-}
-.detail{
-  text-align:center;
-  font-size:13px;
-  color:#444;
-}
-button{
+h1{text-align:center;color:#0B2A44;margin:0;}
+.sub{text-align:center;color:#666;font-size:13px;margin-bottom:15px;}
+label{font-weight:bold;font-size:13px;}
+input,select,textarea,button{
   width:100%;
   padding:12px;
-  margin-top:10px;
-  border:none;
+  margin-top:6px;
+  margin-bottom:12px;
   border-radius:8px;
+  border:1px solid #ccc;
+}
+textarea{min-height:60px;}
+button{
+  background:#0B2A44;
+  color:#fff;
+  border:none;
   font-weight:bold;
   cursor:pointer;
 }
-.mail{background:#7f8c8d;color:#fff}
-.wa{background:#25D366;color:#fff}
-.notice{text-align:center;font-size:11px;color:#666;margin-top:8px}
+.price{
+  font-size:28px;
+  text-align:center;
+  color:#0B2A44;
+}
+.small{text-align:center;font-size:11px;color:#555;}
+.warning{text-align:center;color:red;font-weight:bold;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
-
 <div class="card">
-<h1>LÉMAN COURSES</h1>
-<div class="subtitle">Transport express 24h/24 – 7j/7</div>
 
+<h1>LÉMAN COURSES</h1>
+<div class="sub">Transport express – Suisse romande</div>
+
+<!-- TRAJET -->
 <div class="row">
   <div>
     <label>NPA départ</label>
-    <input id="npaDepart" value="1000" oninput="calculer()">
+    <input id="npaDepart" placeholder="1000">
   </div>
   <div>
     <label>NPA arrivée</label>
-    <input id="npaArrivee" value="1000" oninput="calculer()">
+    <input id="npaArrivee" placeholder="1200">
   </div>
 </div>
 
-<label>Kilomètres (calcul automatique)</label>
-<input id="km" readonly>
-<div class="detail" id="kmInfo"></div>
+<label>Distance & durée</label>
+<input id="km" readonly placeholder="Calcul automatique…">
+<div class="small" id="kmInfo"></div>
 
+<!-- OPTIONS -->
 <div class="row">
   <div>
     <label>Poids du colis (kg)</label>
-    <input id="poids" type="number" value="5" oninput="calculer()">
+    <input id="poids" type="number" min="1">
   </div>
   <div>
-    <label>Inter-villes ?</label>
-    <select id="interville" disabled>
-      <option>Non</option>
-      <option selected>Oui</option>
+    <label>Service</label>
+    <select id="service">
+      <option value="Normal">Normal</option>
+      <option value="Urgent">Urgent</option>
+      <option value="Express">Express</option>
     </select>
   </div>
 </div>
 
 <div class="row">
   <div>
-    <label>Service</label>
-    <select id="service" onchange="calculer()">
-      <option value="normal">Normal</option>
-      <option value="urgent">Urgent</option>
-      <option value="express">Express</option>
+    <label>Horaire</label>
+    <select id="horaire">
+      <option value="Jour">Jour</option>
+      <option value="Nuit">Nuit / Dimanche</option>
     </select>
   </div>
   <div>
-    <label>Horaire</label>
-    <select id="horaire" onchange="calculer()">
-      <option value="jour">Jour</option>
-      <option value="nuit">Nuit / Dimanche</option>
+    <label>Inter-villes</label>
+    <select id="interville">
+      <option value="Non">Non</option>
+      <option value="Oui">Oui</option>
     </select>
   </div>
 </div>
 
-<div class="price" id="prix">CHF 0.–</div>
-<div class="detail" id="detail"></div>
+<div class="price" id="prix">CHF –.–</div>
+<div class="small" id="prixDetail"></div>
+<div class="warning" id="warning"></div>
 
 <hr>
 
+<!-- CLIENT -->
+<h3>Client</h3>
 <div class="row">
-  <div>
-    <label>Nom & Prénom</label>
-    <input id="nom">
-  </div>
-  <div>
-    <label>Téléphone</label>
-    <input id="tel">
-  </div>
+  <div><label>Nom & prénom</label><input id="clientNom"></div>
+  <div><label>Téléphone</label><input id="clientTel"></div>
 </div>
 
-<div class="row">
-  <div>
-    <label>Email (optionnel)</label>
-    <input id="email">
-  </div>
-  <div>
-    <label>Entreprise (optionnel)</label>
-    <input id="societe">
-  </div>
-</div>
+<label>Email</label>
+<input id="clientEmail">
 
 <label>Adresse prise en charge</label>
 <input id="adrDepart">
@@ -150,78 +134,114 @@ button{
 <input id="nature">
 
 <label>Remarques</label>
-<textarea id="remarque"></textarea>
+<textarea id="remarques"></textarea>
 
-<button class="mail" onclick="envoyerMail()">Envoyer la commande par email</button>
-<button class="wa" onclick="envoyerWA()">Envoyer par WhatsApp</button>
+<button onclick="envoyerEmail()">📧 Envoyer la commande</button>
+<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
 
-<div class="notice">
-Prix indicatif – confirmation avant prise en charge.<br>
-Colis &gt; 30 kg : devis spécial.
-</div>
+<p class="small">Prix indicatif – TVA 8.1 % incluse</p>
+
 </div>
 
 <script>
-function kmFromNPA(a,b){
-  return Math.abs(Number(a)-Number(b))*0.9+5;
+// ========= TARIFS =========
+function coefPoids(p){
+  if(p<=5) return 1;
+  if(p<=10) return 1.1;
+  if(p<=20) return 1.25;
+  if(p<=30) return 1.4;
+  return null;
+}
+function baseKm(km,service){
+  if(km<=10) return service==="Normal"?35:service==="Urgent"?55:75;
+  if(km<=30) return service==="Normal"?55:service==="Urgent"?85:115;
+  if(km<=80) return service==="Normal"?75:service==="Urgent"?115:155;
+  if(km<=150) return service==="Normal"?95:service==="Urgent"?145:195;
+  if(km<=300) return service==="Normal"?125:service==="Urgent"?185:245;
+  if(km<=600) return service==="Normal"?165:service==="Urgent"?245:325;
+  return 205;
 }
 
-function calculer(){
-  const npaD=npaDepart.value,npaA=npaArrivee.value;
-  let km=Math.round(kmFromNPA(npaD,npaA));
-  kmField=km;
-  document.getElementById("km").value=km;
-  document.getElementById("kmInfo").innerText="Distance calculée : "+km+" km";
-
-  document.getElementById("interville").value=km>10?"Oui":"Non";
-
-  const poids=Number(poidsField=poids.value);
-  if(poids>30){prix.innerText="Devis spécial";return}
-
-  let base=20+km*1.2;
-  if(poids>5)base+=10;
-  if(poids>10)base+=20;
-  if(poids>20)base+=30;
-
-  if(service.value==="urgent")base+=40;
-  if(service.value==="express")base+=70;
-  if(horaire.value==="nuit")base*=1.25;
-
-  base=Math.round(base/5)*5;
-  prix.innerText="CHF "+base+".–";
-  detail.innerText=km+" km · "+poids+" kg · "+service.value.toUpperCase()+" · "+horaire.value.toUpperCase();
+// ========= KM + DURÉE =========
+async function calculKm(){
+  if(!npaDepart.value||!npaArrivee.value) return;
+  const geo=async npa=>{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
+    const d=await r.json(); return d[0]?[d[0].lon,d[0].lat]:null;
+  };
+  const A=await geo(npaDepart.value);
+  const B=await geo(npaArrivee.value);
+  if(!A||!B){kmInfo.textContent="NPA invalide";return;}
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`);
+  const d=await r.json();
+  const kmCalc=Math.round(d.routes[0].distance/1000);
+  const min=Math.round(d.routes[0].duration/60);
+  km.value=kmCalc;
+  kmInfo.textContent=`${kmCalc} km – ${Math.floor(min/60)}h${min%60}`;
+  calculPrix();
 }
 
-function envoyerMail(){
-  const body=
-`Commande Léman Courses
-Client: ${nom.value}
-Téléphone: ${tel.value}
-
-Trajet:
-${adrDepart.value} → ${adrArrivee.value}
-Km: ${km.value}
-
-Poids: ${poids.value} kg
-Service: ${service.value}
-Horaire: ${horaire.value}
-
-Prix: ${prix.innerText}
-
-Remarques:
-${remarque.value}`;
-
-  location.href="mailto:info@leman-courses.ch?subject=Commande transport&body="+encodeURIComponent(body);
+// ========= PRIX =========
+function calculPrix(){
+  warning.textContent="";
+  const k=Number(km.value);
+  const p=Number(poids.value);
+  if(!k||!p){prix.textContent="CHF –.–";return;}
+  const coef=coefPoids(p);
+  if(!coef){prix.textContent="DEVIS";warning.textContent="Colis > 30 kg";return;}
+  let total=baseKm(k,service.value)*coef;
+  if(horaire.value==="Nuit") total*=1.25;
+  if(interville.value==="Oui"&&k>10) total+=k*1.2;
+  total=Math.ceil(total/5)*5;
+  const ht=total/1.081;
+  const tva=total-ht;
+  prix.textContent=`CHF ${total.toFixed(0)}.–`;
+  prixDetail.textContent=`HT ${ht.toFixed(2)} CHF | TVA 8.1 % ${tva.toFixed(2)} CHF`;
 }
 
-function envoyerWA(){
-  const txt=`Commande Léman Courses
-${prix.innerText}
-${detail.innerText}`;
-  window.open("https://wa.me/?text="+encodeURIComponent(txt));
+// ========= EMAIL =========
+function envoyerEmail(){
+  if(!clientNom.value||!clientTel.value){alert("Nom et téléphone requis");return;}
+  const body=`COMMANDE LÉMAN COURSES
+
+Client : ${clientNom.value}
+Téléphone : ${clientTel.value}
+Email : ${clientEmail.value}
+
+Trajet : ${npaDepart.value} → ${npaArrivee.value}
+Distance : ${km.value} km
+Poids : ${poids.value} kg
+Service : ${service.value}
+
+Prix : ${prix.textContent}
+
+Adresse départ : ${adrDepart.value}
+Adresse arrivée : ${adrArrivee.value}
+
+Remarques :
+${remarques.value}`;
+  window.location.href=`mailto:info@leman-courses.ch?subject=Commande transport&body=${encodeURIComponent(body)}`;
 }
 
-calculer();
+// ========= PDF =========
+function genererPDF(){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  pdf.setFontSize(16);
+  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
+  pdf.setFontSize(10);
+  pdf.text(`Client : ${clientNom.value}`,10,35);
+  pdf.text(`Téléphone : ${clientTel.value}`,10,42);
+  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,52);
+  pdf.text(`Distance : ${km.value} km`,10,59);
+  pdf.text(`Poids : ${poids.value} kg`,10,66);
+  pdf.text(`Prix TTC : ${prix.textContent}`,10,76);
+  pdf.save("Devis_Leman_Courses.pdf");
+}
+
+// ========= EVENTS =========
+[npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
+[poids,service,horaire,interville].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
 
 </body>
