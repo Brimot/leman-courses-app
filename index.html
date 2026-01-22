@@ -8,6 +8,10 @@
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <style>
 body{
   font-family:Arial,Helvetica,sans-serif;
@@ -16,7 +20,7 @@ body{
   padding:20px;
 }
 .card{
-  max-width:720px;
+  max-width:760px;
   margin:auto;
   background:#fff;
   padding:20px;
@@ -41,15 +45,45 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
-.price{
-  font-size:28px;
-  text-align:center;
-  color:#0B2A44;
-}
+.price{font-size:28px;text-align:center;color:#0B2A44;}
 .small{text-align:center;font-size:11px;color:#555;}
 .warning{text-align:center;color:red;font-weight:bold;}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
+
+#mapPopup{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000000cc;
+  z-index:9999;
+}
+#map{
+  width:100%;
+  height:100%;
+}
+.mapInfo{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#fff;
+  padding:10px 16px;
+  border-radius:10px;
+  font-weight:bold;
+}
+.closeBtn{
+  position:absolute;
+  top:15px;
+  right:15px;
+  z-index:10000;
+  padding:10px 14px;
+  background:#fff;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -59,44 +93,23 @@ button{
 <h1>LÉMAN COURSES</h1>
 <div class="sub">Transport express – Suisse romande</div>
 
-<!-- TRAJET -->
 <div class="row">
-  <div>
-    <label>NPA départ</label>
-    <input id="npaDepart" placeholder="1000">
-  </div>
-  <div>
-    <label>NPA arrivée</label>
-    <input id="npaArrivee" placeholder="1200">
-  </div>
+  <div><label>NPA départ</label><input id="npaDepart"></div>
+  <div><label>NPA arrivée</label><input id="npaArrivee"></div>
 </div>
 
 <label>Distance & durée</label>
-<input id="km" readonly placeholder="Calcul automatique…">
+<input id="km" readonly>
 <div class="small" id="kmInfo"></div>
 
-<!-- OPTIONS -->
 <div class="row">
-  <div>
-    <label>Poids du colis (kg)</label>
-    <input id="poids" type="number" min="1">
-  </div>
+  <div><label>Poids (kg)</label><input id="poids" type="number"></div>
   <div>
     <label>Service</label>
     <select id="service">
-      <option value="Normal">Normal</option>
-      <option value="Urgent">Urgent</option>
-      <option value="Express">Express</option>
-    </select>
-  </div>
-</div>
-
-<div class="row">
-  <div>
-    <label>Horaire</label>
-    <select id="horaire">
-      <option value="Jour">Jour</option>
-      <option value="Nuit">Nuit / Dimanche</option>
+      <option>Normal</option>
+      <option>Urgent</option>
+      <option>Express</option>
     </select>
   </div>
 </div>
@@ -105,40 +118,39 @@ button{
 <div class="small" id="prixDetail"></div>
 <div class="warning" id="warning"></div>
 
+<button id="btnMap" style="display:none;" onclick="openMap()">🗺️ Voir le trajet</button>
+
 <hr>
 
-<!-- CLIENT -->
 <h3>Client</h3>
 <div class="row">
-  <div><label>Nom & prénom</label><input id="clientNom"></div>
+  <div><label>Nom</label><input id="clientNom"></div>
   <div><label>Téléphone</label><input id="clientTel"></div>
 </div>
 
-<label>Email</label>
-<input id="clientEmail">
+<label>Email</label><input id="clientEmail">
+<label>Adresse départ</label><input id="adrDepart">
+<label>Adresse arrivée</label><input id="adrArrivee">
 
-<label>Adresse prise en charge</label>
-<input id="adrDepart">
+<button onclick="envoyerEmail()">📧 Envoyer</button>
+<button onclick="genererPDF()">📄 Devis PDF</button>
 
-<label>Adresse livraison</label>
-<input id="adrArrivee">
+<p class="small">TVA 8.1 % incluse</p>
+</div>
 
-<label>Nature du colis</label>
-<input id="nature">
-
-<label>Remarques</label>
-<textarea id="remarques"></textarea>
-
-<button onclick="envoyerEmail()">📧 Envoyer la commande</button>
-<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
-
-<p class="small">Prix indicatif – TVA 8.1 % incluse</p>
-
+<!-- POPUP CARTE -->
+<div id="mapPopup">
+  <button class="closeBtn" onclick="closeMap()">✕</button>
+  <div id="map"></div>
+  <div class="mapInfo" id="mapInfo"></div>
 </div>
 
 <script>
-// =================== VARIABLES INTERNES ===================
-let isInterville = false;
+// =================== VARIABLES ===================
+let coordA=null, coordB=null;
+let isInterville=false;
+let map, routeLayer;
+let dureeMin=0;
 
 // =================== TARIFS ===================
 function coefPoids(p){
@@ -148,19 +160,13 @@ function coefPoids(p){
   if(p<=30) return 1.4;
   return null;
 }
-function baseKm(km,service){
-  if(km<=10) return service==="Normal"?35:service==="Urgent"?55:75;
-  if(km<=30) return service==="Normal"?55:service==="Urgent"?85:115;
-  if(km<=80) return service==="Normal"?75:service==="Urgent"?115:155;
-  if(km<=150) return service==="Normal"?95:service==="Urgent"?145:195;
-  if(km<=300) return service==="Normal"?125:service==="Urgent"?185:245;
-  if(km<=600) return service==="Normal"?165:service==="Urgent"?245:325;
-  return 205;
-}
-
-// =================== INTER-VILLES AUTO ===================
-function updateInterville(km){
-  isInterville = km > 10;
+function baseKm(km,s){
+  if(km<=10) return s==="Normal"?35:s==="Urgent"?55:75;
+  if(km<=30) return s==="Normal"?55:s==="Urgent"?85:115;
+  if(km<=80) return s==="Normal"?75:s==="Urgent"?115:155;
+  if(km<=150) return s==="Normal"?95:s==="Urgent"?145:195;
+  if(km<=300) return s==="Normal"?125:s==="Urgent"?185:245;
+  return 165;
 }
 
 // =================== KM + DURÉE ===================
@@ -168,130 +174,96 @@ async function calculKm(){
   if(!npaDepart.value||!npaArrivee.value) return;
 
   const geo=async npa=>{
-    const r=await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${encodeURIComponent(npa)}`
-    );
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
     const d=await r.json();
     return d[0]?[d[0].lon,d[0].lat]:null;
   };
 
-  const A=await geo(npaDepart.value);
-  const B=await geo(npaArrivee.value);
-  if(!A||!B){kmInfo.textContent="NPA invalide";return;}
+  coordA=await geo(npaDepart.value);
+  coordB=await geo(npaArrivee.value);
+  if(!coordA||!coordB){kmInfo.textContent="NPA invalide";return;}
 
-  const r=await fetch(
-    `https://router.project-osrm.org/route/v1/driving/${A[0]},${A[1]};${B[0]},${B[1]}?overview=false`
-  );
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
   const d=await r.json();
 
   const kmCalc=Math.round(d.routes[0].distance/1000);
-  const min=Math.round(d.routes[0].duration/60);
+  dureeMin=Math.round(d.routes[0].duration/60);
 
   km.value=kmCalc;
-  kmInfo.textContent=`${kmCalc} km – ${Math.floor(min/60)}h${min%60}`;
+  kmInfo.textContent=`${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  isInterville = kmCalc>10;
 
-  updateInterville(kmCalc);
+  window.routeGeo=d.routes[0].geometry;
+  document.getElementById("btnMap").style.display="block";
   calculPrix();
 }
 
 // =================== PRIX ===================
 function calculPrix(){
-  warning.textContent="";
-  const k=Number(km.value);
-  const p=Number(poids.value);
+  const k=Number(km.value), p=Number(poids.value);
   if(!k||!p){prix.textContent="CHF –.–";return;}
+  const c=coefPoids(p);
+  if(!c){prix.textContent="DEVIS";warning.textContent=">30 kg";return;}
+  let t=baseKm(k,service.value)*c;
+  if(isInterville) t+=k*1.2;
+  t=Math.ceil(t/5)*5;
+  const ht=t/1.081, tva=t-ht;
+  prix.textContent=`CHF ${t}.–`;
+  prixDetail.textContent=`${k} km • ${Math.floor(dureeMin/60)}h${dureeMin%60} • ${service.value} • ${isInterville?"Inter-villes":"Locale"} | HT ${ht.toFixed(2)} + TVA ${tva.toFixed(2)}`;
+}
 
-  const coef=coefPoids(p);
-  if(!coef){
-    prix.textContent="DEVIS";
-    warning.textContent="Colis > 30 kg – devis spécial";
-    return;
-  }
+// =================== MAP POPUP ===================
+function openMap(){
+  document.getElementById("mapPopup").style.display="block";
+  setTimeout(()=>{
+    if(!map){
+      map=L.map("map");
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    }
+    if(routeLayer) map.removeLayer(routeLayer);
 
-  let total=baseKm(k,service.value)*coef;
+    routeLayer=L.geoJSON(window.routeGeo,{style:{color:"red",weight:4}}).addTo(map);
+    map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
 
-  if(horaire.value==="Nuit") total*=1.25;
-  if(isInterville) total+=k*1.2;
+    L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
+    L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
 
-  total=Math.ceil(total/5)*5;
-
-  const ht=total/1.081;
-  const tva=total-ht;
-
-  const interTxt = isInterville
-    ? "Course inter-villes (> 10 km)"
-    : "Course locale (≤ 10 km)";
-
-  prix.textContent=`CHF ${total.toFixed(0)}.–`;
-  prixDetail.textContent=
-    `${k} km • ${p} kg • ${service.value.toUpperCase()} • ${interTxt} | HT ${ht.toFixed(2)} CHF + TVA 8.1 % ${tva.toFixed(2)} CHF`;
+    document.getElementById("mapInfo").textContent=
+      `${km.value} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  },200);
+}
+function closeMap(){
+  document.getElementById("mapPopup").style.display="none";
 }
 
 // =================== EMAIL ===================
 function envoyerEmail(){
-  if(!clientNom.value||!clientTel.value){
-    alert("Nom et téléphone requis");
-    return;
-  }
-
-  const body=`COMMANDE – LÉMAN COURSES
-
-Client : ${clientNom.value}
-Téléphone : ${clientTel.value}
-Email : ${clientEmail.value}
-
+  const body=`Commande Léman Courses
 Trajet : ${npaDepart.value} → ${npaArrivee.value}
 Distance : ${km.value} km
-Type : ${isInterville ? "Inter-villes" : "Locale"}
-Poids : ${poids.value} kg
-Service : ${service.value}
-Horaire : ${horaire.value}
-
-Prix : ${prix.textContent}
-
-Adresse départ :
-${adrDepart.value}
-
-Adresse livraison :
-${adrArrivee.value}
-
-Remarques :
-${remarques.value}`;
-
-  window.location.href=
-    `mailto:info@leman-courses.ch?subject=Commande transport&body=${encodeURIComponent(body)}`;
+Durée : ${Math.floor(dureeMin/60)}h${dureeMin%60}
+Prix : ${prix.textContent}`;
+  window.location.href=`mailto:info@leman-courses.ch?subject=Commande&body=${encodeURIComponent(body)}`;
 }
 
-// =================== PDF ===================
+// =================== PDF (CARTE INCLUSE) ===================
 function genererPDF(){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
 
-  let y=15;
-  pdf.setFontSize(16);
-  pdf.text("DEVIS – LÉMAN COURSES",105,y,{align:"center"});
-  y+=10;
+  const staticMap=`https://staticmap.openstreetmap.de/staticmap.php?size=600x300&markers=${coordA[1]},${coordA[0]},red|${coordB[1]},${coordB[0]},blue&path=weight:3|color:red|${coordA[1]},${coordA[0]}|${coordB[1]},${coordB[0]}`;
 
-  pdf.setFontSize(10);
-  pdf.text(`Client : ${clientNom.value}`,10,y); y+=6;
-  pdf.text(`Téléphone : ${clientTel.value}`,10,y); y+=6;
-  pdf.text(`Trajet : ${npaDepart.value} → ${npaArrivee.value}`,10,y); y+=6;
-  pdf.text(`Distance : ${km.value} km`,10,y); y+=6;
-  pdf.text(`Type : ${isInterville ? "Inter-villes (>10 km)" : "Locale (≤10 km)"}`,10,y); y+=6;
-  pdf.text(`Poids : ${poids.value} kg`,10,y); y+=6;
-  pdf.text(`Service : ${service.value}`,10,y); y+=6;
-  pdf.text(`Prix TTC : ${prix.textContent}`,10,y);
+  pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
+  pdf.text(`${km.value} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`,10,30);
+  pdf.text(`Prix : ${prix.textContent}`,10,38);
 
-  y+=10;
-  pdf.setFontSize(9);
-  pdf.text("Prix indicatif – TVA 8.1 % incluse",10,y);
-
+  pdf.addImage(staticMap,"PNG",10,45,190,90);
   pdf.save("Devis_Leman_Courses.pdf");
 }
 
 // =================== EVENTS ===================
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service,horaire].forEach(e=>e.addEventListener("input",calculPrix));
+[poids,service].forEach(e=>e.addEventListener("input",calculPrix));
 </script>
 
 </body>
