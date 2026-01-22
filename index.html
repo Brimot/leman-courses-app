@@ -47,7 +47,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <div class="sub">Transport express – Suisse romande</div>
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
-<div class="small">Temps donné à titre indicatif selon les conditions de circulation.</div>
+<div class="small">Temps donné à titre indicatif selon les conditions de circulation</div>
 
 <div class="row">
   <div><label>NPA départ</label><input id="npaDepart"></div>
@@ -58,7 +58,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <input id="km" readonly>
 
 <div class="row">
-  <div><label>Poids (kg)</label><input id="poids" type="number"></div>
+  <div><label>Poids (kg)</label><input id="poids" type="number" value="5"></div>
   <div>
     <label>Service</label>
     <select id="service">
@@ -104,21 +104,26 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 let coordA, coordB, routeGeo, map, routeLayer;
 let dureeMin = 0, isInterville=false;
 
-/* ===== TARIFS AJUSTÉS (-60% puis -10%) ===== */
-function coefPoids(p){
-  if(p<=5) return 1;
-  if(p<=10) return 1.05;
-  if(p<=20) return 1.12;
-  if(p<=30) return 1.2;
-  return null;
+/* ===== TARIFS ===== */
+function baseKm(km){
+  if(km <= 10)  return 20;
+  if(km <= 30)  return 32;
+  if(km <= 80)  return 50;
+  if(km <= 150) return 68;
+  if(km <= 300) return 85;
+  return 100;
 }
-function baseKm(km,s){
-  if(km<=10)  return s==="Normal"?22:s==="Urgent"?32:42;
-  if(km<=30)  return s==="Normal"?35:s==="Urgent"?50:65;
-  if(km<=80)  return s==="Normal"?55:s==="Urgent"?75:95;
-  if(km<=150) return s==="Normal"?75:s==="Urgent"?100:125;
-  if(km<=300) return s==="Normal"?95:s==="Urgent"?125:155;
-  return 120;
+function coefService(s){
+  if(s === "Urgent")  return 1.2;
+  if(s === "Express") return 1.4;
+  return 1;
+}
+function coefPoids(p){
+  if(p <= 5)  return 1;
+  if(p <= 10) return 1.05;
+  if(p <= 20) return 1.12;
+  if(p <= 30) return 1.2;
+  return null;
 }
 
 /* ===== KM + DURÉE ===== */
@@ -126,43 +131,51 @@ async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
   const geo = async npa =>{
-    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
-    const d=await r.json();return d[0]?[d[0].lon,d[0].lat]:null;
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
+    const d = await r.json();
+    return d[0] ? [d[0].lon, d[0].lat] : null;
   };
 
-  coordA=await geo(npaDepart.value);
-  coordB=await geo(npaArrivee.value);
-  if(!coordA||!coordB) return;
+  coordA = await geo(npaDepart.value);
+  coordB = await geo(npaArrivee.value);
+  if(!coordA || !coordB) return;
 
-  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
-  const d=await r.json();
+  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
+  const d = await r.json();
 
-  const kmCalc=Math.round(d.routes[0].distance/1000);
-  dureeMin=Math.round(d.routes[0].duration/60);
-  routeGeo=d.routes[0].geometry;
-  isInterville=kmCalc>10;
+  const kmCalc = Math.round(d.routes[0].distance/1000);
+  dureeMin = Math.round(d.routes[0].duration/60);
+  routeGeo = d.routes[0].geometry;
+  isInterville = kmCalc > 10;
 
-  km.value=`${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-  topInfo.textContent=`Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-  btnMap.style.display="block";
+  km.value = `${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  topInfo.textContent = `Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  btnMap.style.display = "block";
   calculPrix(kmCalc);
 }
 
 /* ===== PRIX ===== */
 function calculPrix(k){
-  const p=Number(poids.value);
-  const c=coefPoids(p);
-  if(!c){prix.textContent="DEVIS";warning.textContent="Colis > 30 kg";return;}
+  const p = Number(poids.value);
+  const cP = coefPoids(p);
+  if(!cP){
+    prix.textContent = "DEVIS";
+    warning.textContent = "Colis > 30 kg";
+    return;
+  }
 
-  let t=baseKm(k,service.value)*c;
-  if(isInterville) t+=k*0.6;
+  let t = baseKm(k);
+  t = t * coefService(service.value);
+  t = t * cP;
+  if(isInterville) t += k * 0.5;
+  t = t * 0.9; // -10 %
 
-  t = t * 0.9; // -10 % global
-  t=Math.ceil(t/5)*5;
+  if(t < 25) t = 25;
+  t = Math.ceil(t / 5) * 5;
 
-  prix.textContent=`CHF ${t}.–`;
-  prixDetail.textContent=isInterville?"Inter-villes":"Locale";
-  warning.textContent="";
+  prix.textContent = `CHF ${t}.–`;
+  prixDetail.textContent = `${service.value} • ${isInterville ? "Inter-villes" : "Locale"} • min. 25 CHF`;
+  warning.textContent = "";
 }
 
 /* ===== CARTE ===== */
@@ -170,22 +183,22 @@ function openMap(){
   mapPopup.style.display="block";
   setTimeout(()=>{
     if(!map){
-      map=L.map("map");
+      map = L.map("map");
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
     }
     if(routeLayer) map.removeLayer(routeLayer);
-    routeLayer=L.geoJSON(routeGeo,{style:{color:"red",weight:4}}).addTo(map);
+    routeLayer = L.geoJSON(routeGeo,{style:{color:"red",weight:4}}).addTo(map);
     map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
     L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
     L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
-    mapInfo.textContent=`${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
+    mapInfo.textContent = `${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
   },200);
 }
 function closeMap(){mapPopup.style.display="none";}
 
 /* ===== WHATSAPP ===== */
 function envoyerWhatsApp(){
-  const msg=
+  const msg =
 `🚚 LÉMAN COURSES
 
 Client : ${clientNom.value}
@@ -207,8 +220,10 @@ Remarques : ${remarques.value}`;
   window.open("https://wa.me/41796467442?text="+encodeURIComponent(msg),"_blank");
 }
 
+/* ===== EVENTS ===== */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
 [poids,service].forEach(()=>calculPrix(parseInt(km.value)));
 </script>
+
 </body>
 </html>
