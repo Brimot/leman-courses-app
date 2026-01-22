@@ -144,12 +144,30 @@ let coordA, coordB, routeGeo;
 let dureeMin=0,isInter=false;
 let map, routeLayer;
 
-async function villeFromNPA(npa,field){
- if(!npa) return;
- const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
- const d=await r.json();
- field.value=d[0]?.display_name.split(",")[0]||"";
+async function villeFromNPA(npa, field){
+  if(!npa) return;
+
+  const r = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&addressdetails=1&q=${npa}`
+  );
+  const d = await r.json();
+
+  if(!d[0] || !d[0].address){
+    field.value = "";
+    return;
+  }
+
+  const a = d[0].address;
+
+  field.value =
+    a.city ||
+    a.town ||
+    a.village ||
+    a.municipality ||
+    a.hamlet ||
+    "";
 }
+
 
 async function calculKm(){
  if(!npaDepart.value||!npaArrivee.value) return;
