@@ -13,8 +13,6 @@ body{font-family:Arial;background:#0B2A44;padding:20px;margin:0}
 .card{max-width:820px;margin:auto;background:#fff;padding:20px;border-radius:14px}
 h1{text-align:center;color:#0B2A44;margin:0}
 .sub{text-align:center;font-size:13px;color:#666;margin-bottom:10px}
-.badges{text-align:center;font-size:12px;color:#0B2A44;margin-bottom:15px}
-.badges span{margin:0 6px;font-weight:bold}
 label{font-weight:bold;font-size:13px}
 input,select,textarea,button{
   width:100%;padding:12px;margin-top:6px;margin-bottom:12px;
@@ -43,18 +41,20 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 
 <h1>LÉMAN COURSES</h1>
 <div class="sub">Transport express – Suisse romande</div>
-<div class="badges">
-  <span>✔ Commercialement saine</span>
-  <span>✔ Juridiquement propre</span>
-  <span>✔ Techniquement stable</span>
-</div>
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
 <div class="small">Temps donné à titre indicatif selon les conditions de circulation</div>
 
+<!-- NPA -->
 <div class="row">
   <div><label>NPA départ</label><input id="npaDepart"></div>
   <div><label>NPA arrivée</label><input id="npaArrivee"></div>
+</div>
+
+<!-- VILLES AUTO -->
+<div class="row">
+  <div><label>Ville départ</label><input id="villeDepart" readonly></div>
+  <div><label>Ville arrivée</label><input id="villeArrivee" readonly></div>
 </div>
 
 <label>Résultat calcul</label>
@@ -96,9 +96,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 
 <button onclick="envoyerWhatsApp()">💬 Envoyer la commande via WhatsApp</button>
 
-<p class="small">
-TVA 8.1 % incluse • Minimum de course 25 CHF • Validation finale avant prise en charge
-</p>
+<p class="small">TVA 8.1 % incluse • Minimum de course 25 CHF</p>
 </div>
 
 <!-- POPUP CARTE -->
@@ -142,12 +140,28 @@ function remiseClient(code){
   return 0;
 }
 
+/* ===== VILLE DEPUIS NPA ===== */
+async function villeDepuisNPA(npa){
+  const r = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&addressdetails=1&q=${npa}`
+  );
+  const d = await r.json();
+  if(!d[0] || !d[0].address) return "";
+  return d[0].address.city ||
+         d[0].address.town ||
+         d[0].address.village ||
+         d[0].address.municipality ||
+         "";
+}
+
 /* ===== DISTANCE & DURÉE ===== */
 async function calculKm(){
   if(!npaDepart.value || !npaArrivee.value) return;
 
   const geo = async npa =>{
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`);
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&q=${npa}`
+    );
     const d = await r.json();
     return d[0] ? [d[0].lon, d[0].lat] : null;
   };
@@ -156,7 +170,12 @@ async function calculKm(){
   coordB = await geo(npaArrivee.value);
   if(!coordA || !coordB) return;
 
-  const r = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
+  villeDepart.value = await villeDepuisNPA(npaDepart.value);
+  villeArrivee.value = await villeDepuisNPA(npaArrivee.value);
+
+  const r = await fetch(
+    `https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`
+  );
   const d = await r.json();
 
   const kmCalc = Math.round(d.routes[0].distance/1000);
@@ -165,7 +184,9 @@ async function calculKm(){
   isInterville = kmCalc > 10;
 
   km.value = `${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-  topInfo.textContent = `Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  topInfo.textContent =
+    `Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+
   btnMap.style.display = "block";
   calculPrix(kmCalc);
 }
@@ -184,7 +205,7 @@ function calculPrix(k){
   t *= coefService(service.value);
   t *= cP;
   if(isInterville) t += k * 0.5;
-  t *= 0.9; // -10 %
+  t *= 0.9;
 
   let infoRemise = "";
   const r = remiseClient(codeClient.value);
@@ -231,8 +252,8 @@ Téléphone : ${clientTel.value}
 
 Code client : ${codeClient.value || "—"} (à valider)
 
-Départ : ${adrDepart.value}
-Arrivée : ${adrArrivee.value}
+Départ : ${npaDepart.value} ${villeDepart.value}
+Arrivée : ${npaArrivee.value} ${villeArrivee.value}
 
 Distance : ${km.value}
 Service : ${service.value}
@@ -244,12 +265,17 @@ Prix indicatif : ${prix.textContent}
 Colis : ${nature.value}
 Remarques : ${remarques.value}`;
 
-  window.open("https://wa.me/41796467442?text="+encodeURIComponent(msg),"_blank");
+  window.open(
+    "https://wa.me/41796467442?text="+encodeURIComponent(msg),
+    "_blank"
+  );
 }
 
 /* ===== EVENTS ===== */
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service,codeClient].forEach(e=>e.addEventListener("input",()=>calculPrix(parseInt(km.value))));
+[poids,service,codeClient].forEach(e=>
+  e.addEventListener("input",()=>calculPrix(parseInt(km.value)))
+);
 </script>
 
 </body>
