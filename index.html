@@ -20,7 +20,7 @@ body{
   padding:20px;
 }
 .card{
-  max-width:760px;
+  max-width:780px;
   margin:auto;
   background:#fff;
   padding:20px;
@@ -46,6 +46,16 @@ button{
   cursor:pointer;
 }
 .price{font-size:28px;text-align:center;color:#0B2A44;}
+.infoTop{
+  text-align:center;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+.infoSub{
+  text-align:center;
+  font-size:11px;
+  color:#666;
+}
 .small{text-align:center;font-size:11px;color:#555;}
 .warning{text-align:center;color:red;font-weight:bold;}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -57,6 +67,16 @@ button{
   inset:0;
   background:#000000cc;
   z-index:9999;
+}
+#mapHeader{
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  background:#fff;
+  padding:14px;
+  font-weight:bold;
+  cursor:pointer;
+  z-index:10000;
 }
 #map{
   width:100%;
@@ -72,18 +92,6 @@ button{
   border-radius:10px;
   font-weight:bold;
 }
-.closeBtn{
-  position:absolute;
-  top:15px;
-  right:15px;
-  z-index:10000;
-  padding:10px 14px;
-  background:#fff;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-  cursor:pointer;
-}
 </style>
 </head>
 
@@ -93,14 +101,18 @@ button{
 <h1>LÉMAN COURSES</h1>
 <div class="sub">Transport express – Suisse romande</div>
 
+<div class="infoTop" id="topInfo">Distance : – km • Temps estimé : –</div>
+<div class="infoSub">
+Temps de trajet donné à titre indicatif, susceptible de varier selon les conditions de circulation.
+</div>
+
 <div class="row">
   <div><label>NPA départ</label><input id="npaDepart"></div>
   <div><label>NPA arrivée</label><input id="npaArrivee"></div>
 </div>
 
-<label>Distance & durée</label>
+<label>Détails calcul</label>
 <input id="km" readonly>
-<div class="small" id="kmInfo"></div>
 
 <div class="row">
   <div><label>Poids (kg)</label><input id="poids" type="number"></div>
@@ -140,7 +152,7 @@ button{
 
 <!-- POPUP CARTE -->
 <div id="mapPopup">
-  <button class="closeBtn" onclick="closeMap()">✕</button>
+  <div id="mapHeader" onclick="closeMap()">← Retour au calculateur</div>
   <div id="map"></div>
   <div class="mapInfo" id="mapInfo"></div>
 </div>
@@ -148,9 +160,9 @@ button{
 <script>
 // =================== VARIABLES ===================
 let coordA=null, coordB=null;
-let isInterville=false;
 let map, routeLayer;
 let dureeMin=0;
+let isInterville=false;
 
 // =================== TARIFS ===================
 function coefPoids(p){
@@ -181,7 +193,7 @@ async function calculKm(){
 
   coordA=await geo(npaDepart.value);
   coordB=await geo(npaArrivee.value);
-  if(!coordA||!coordB){kmInfo.textContent="NPA invalide";return;}
+  if(!coordA||!coordB){return;}
 
   const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coordA[0]},${coordA[1]};${coordB[0]},${coordB[1]}?overview=full&geometries=geojson`);
   const d=await r.json();
@@ -189,18 +201,20 @@ async function calculKm(){
   const kmCalc=Math.round(d.routes[0].distance/1000);
   dureeMin=Math.round(d.routes[0].duration/60);
 
-  km.value=kmCalc;
-  kmInfo.textContent=`${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
-  isInterville = kmCalc>10;
+  km.value=`${kmCalc} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+  document.getElementById("topInfo").textContent =
+    `Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
 
+  isInterville = kmCalc>10;
   window.routeGeo=d.routes[0].geometry;
   document.getElementById("btnMap").style.display="block";
-  calculPrix();
+
+  calculPrix(kmCalc);
 }
 
 // =================== PRIX ===================
-function calculPrix(){
-  const k=Number(km.value), p=Number(poids.value);
+function calculPrix(k){
+  const p=Number(poids.value);
   if(!k||!p){prix.textContent="CHF –.–";return;}
   const c=coefPoids(p);
   if(!c){prix.textContent="DEVIS";warning.textContent=">30 kg";return;}
@@ -209,10 +223,10 @@ function calculPrix(){
   t=Math.ceil(t/5)*5;
   const ht=t/1.081, tva=t-ht;
   prix.textContent=`CHF ${t}.–`;
-  prixDetail.textContent=`${k} km • ${Math.floor(dureeMin/60)}h${dureeMin%60} • ${service.value} • ${isInterville?"Inter-villes":"Locale"} | HT ${ht.toFixed(2)} + TVA ${tva.toFixed(2)}`;
+  prixDetail.textContent=`HT ${ht.toFixed(2)} + TVA ${tva.toFixed(2)}`;
 }
 
-// =================== MAP POPUP ===================
+// =================== MAP ===================
 function openMap(){
   document.getElementById("mapPopup").style.display="block";
   setTimeout(()=>{
@@ -223,13 +237,13 @@ function openMap(){
     if(routeLayer) map.removeLayer(routeLayer);
 
     routeLayer=L.geoJSON(window.routeGeo,{style:{color:"red",weight:4}}).addTo(map);
-    map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
+    map.fitBounds(routeLayer.getBounds(),{padding:[50,50]});
 
     L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
     L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
 
-    document.getElementById("mapInfo").textContent=
-      `${km.value} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
+    document.getElementById("mapInfo").textContent =
+      `${Math.floor(dureeMin/60)}h${dureeMin%60} • ${isInterville?"Inter-villes":"Locale"}`;
   },200);
 }
 function closeMap(){
@@ -238,32 +252,31 @@ function closeMap(){
 
 // =================== EMAIL ===================
 function envoyerEmail(){
-  const body=`Commande Léman Courses
-Trajet : ${npaDepart.value} → ${npaArrivee.value}
-Distance : ${km.value} km
-Durée : ${Math.floor(dureeMin/60)}h${dureeMin%60}
-Prix : ${prix.textContent}`;
-  window.location.href=`mailto:info@leman-courses.ch?subject=Commande&body=${encodeURIComponent(body)}`;
+  window.location.href=
+    `mailto:info@leman-courses.ch?subject=Commande&body=${encodeURIComponent(
+      `Trajet ${npaDepart.value} → ${npaArrivee.value}\nDistance : ${km.value}\nPrix : ${prix.textContent}`
+    )}`;
 }
 
-// =================== PDF (CARTE INCLUSE) ===================
+// =================== PDF ===================
 function genererPDF(){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
 
-  const staticMap=`https://staticmap.openstreetmap.de/staticmap.php?size=600x300&markers=${coordA[1]},${coordA[0]},red|${coordB[1]},${coordB[0]},blue&path=weight:3|color:red|${coordA[1]},${coordA[0]}|${coordB[1]},${coordB[0]}`;
+  const mapImg=`https://staticmap.openstreetmap.de/staticmap.php?size=600x300&markers=${coordA[1]},${coordA[0]},red|${coordB[1]},${coordB[0]},blue&path=weight:3|color:red|${coordA[1]},${coordA[0]}|${coordB[1]},${coordB[0]}`;
 
   pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
-  pdf.text(`${km.value} km – ${Math.floor(dureeMin/60)}h${dureeMin%60}`,10,30);
-  pdf.text(`Prix : ${prix.textContent}`,10,38);
+  pdf.text(`Distance : ${km.value}`,10,30);
+  pdf.text("Temps indicatif selon conditions de circulation",10,36);
+  pdf.text(`Prix : ${prix.textContent}`,10,44);
+  pdf.addImage(mapImg,"PNG",10,50,190,90);
 
-  pdf.addImage(staticMap,"PNG",10,45,190,90);
   pdf.save("Devis_Leman_Courses.pdf");
 }
 
 // =================== EVENTS ===================
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
-[poids,service].forEach(e=>e.addEventListener("input",calculPrix));
+[poids,service].forEach(e=>e.addEventListener("input",()=>calculPrix(parseInt(km.value))));
 </script>
 
 </body>
