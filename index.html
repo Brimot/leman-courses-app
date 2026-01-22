@@ -126,17 +126,24 @@ async function envoyer() {
     prix: prixDiv.textContent
   };
 
-  await fetch(
-    "https://script.google.com/macros/s/AKfycbz6N8J6gJRjLJhj3mIP6wf1kVvoloBsZKYSKBSWkOd3hywU2kEtUpOvxg83D8LXR_D-/exec",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "Content-Type": "application/json" }
-    }
-  );
+  try {
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbz6N8J6gJRjLJhj3mIP6wf1kVvoloBsZKYSKBSWkOd3hywU2kEtUpOvxg83D8LXR_D-/exec",
+      {
+        method: "POST",
+        body: JSON.stringify(data)
+      }
+    );
 
-  alert("Commande envoyée !");
+    const result = await response.text();
+    alert("✅ Commande envoyée avec succès");
+
+  } catch (err) {
+    alert("❌ Erreur lors de l’envoi");
+    console.error(err);
+  }
 }
+
 
 /* références */
 const kmInput = document.getElementById("km");
