@@ -5,68 +5,137 @@
 <title>LÉMAN COURSES – Transport express</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-body{font-family:Arial;background:#0B2A44;margin:0;padding:20px}
+:root{
+  --blue:#0B2A44;
+  --yellow:#F2C94C;
+  --white:#FFFFFF;
+}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  margin:0;
+  padding:20px;
+  background:linear-gradient(180deg, var(--blue) 0%, #123A5A 100%);
+}
+
 .container{max-width:900px;margin:auto}
-.header{display:flex;gap:16px;align-items:center;margin-bottom:15px}
-.header img{height:60px}
-.header h1{margin:0;color:#fff}
-.header p{margin:0;font-size:13px;color:#cfd8e3}
-.card{background:#fff;border-radius:16px;padding:22px}
-.section{margin-top:20px;font-weight:bold;color:#0B2A44}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.header{
+  text-align:center;
+  color:white;
+  margin-bottom:20px;
+}
+.header h1{margin:0;font-size:32px}
+.header p{margin-top:6px;color:#cfd8e3}
+
+.card{
+  background:var(--white);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+.section{
+  margin-top:22px;
+  font-weight:bold;
+  color:var(--blue);
+  border-left:5px solid var(--yellow);
+  padding-left:10px;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+@media(max-width:650px){.row{grid-template-columns:1fr}}
+
 label{font-size:13px;font-weight:bold}
 input,select,textarea,button{
- width:100%;padding:12px;border-radius:8px;border:1px solid #ccc;
- margin-top:6px;margin-bottom:12px
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  margin-bottom:12px;
+  border-radius:8px;
+  border:1px solid #ccc;
 }
 input[readonly]{background:#f3f3f3}
-button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer}
-.price{font-size:30px;text-align:center;color:#0B2A44}
-.small{text-align:center;font-size:11px;color:#666}
+
+button{
+  background:var(--blue);
+  color:white;
+  font-weight:bold;
+  border:none;
+  cursor:pointer;
+  transition:0.2s;
+}
+button:hover{
+  background:var(--yellow);
+  color:var(--blue);
+}
+
+.price{
+  font-size:30px;
+  text-align:center;
+  background:var(--yellow);
+  color:var(--blue);
+  border-radius:12px;
+  padding:12px;
+  margin:20px 0;
+  font-weight:bold;
+}
+
+.small{text-align:center;font-size:11px;color:#555}
 .warning{text-align:center;color:#b00020;font-weight:bold}
 
+/* MAP */
 #mapPopup{
- display:none;position:fixed;inset:0;background:#000000cc;z-index:9999
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000000cc;
+  z-index:9999;
 }
 #mapHeader{
- background:#fff;padding:14px;font-weight:bold;cursor:pointer
+  background:white;
+  padding:14px;
+  font-weight:bold;
+  cursor:pointer;
 }
 #map{width:100%;height:100%}
 .mapInfo{
- position:absolute;top:60px;left:50%;transform:translateX(-50%);
- background:#fff;padding:10px 16px;border-radius:10px;font-weight:bold
+  position:absolute;
+  top:60px;
+  left:50%;
+  transform:translateX(-50%);
+  background:white;
+  padding:10px 16px;
+  border-radius:10px;
+  font-weight:bold;
 }
-
-@media(max-width:650px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
 <div class="container">
-  
-  <div>
 
 <div class="header">
- 
-    <h1>LÉMAN COURSES</h1>
-    <p>Transport express professionnel – Suisse romande</p>
-  </div>
+  <h1>LÉMAN COURSES</h1>
+  <p>Transport express professionnel – Suisse romande</p>
 </div>
 
 <div class="card">
 
 <div class="small" id="topInfo">Distance : – km • Temps estimé : –</div>
-<div class="small">Temps indicatif selon conditions de circulation</div>
+<div class="small">Temps donné à titre indicatif selon conditions de circulation</div>
 
 <div class="section">Trajet</div>
+
 <div class="row">
   <div>
     <label>NPA départ</label>
@@ -95,6 +164,7 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <button id="btnMap" style="display:none" onclick="openMap()">🗺️ Voir le trajet</button>
 
 <div class="section">Colis</div>
+
 <div class="row">
   <div>
     <label>Poids (kg)</label>
@@ -114,11 +184,13 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <div class="small" id="prixDetail"></div>
 <div class="warning" id="warning"></div>
 
-<div class="section">Client / Entreprise</div>
+<div class="section">Client</div>
+
 <div class="row">
   <div><label>Nom / Entreprise</label><input id="clientNom"></div>
   <div><label>Téléphone</label><input id="clientTel"></div>
 </div>
+
 <label>Email</label><input id="clientEmail">
 <label>Adresse départ</label><input id="adrDepart">
 <label>Adresse arrivée</label><input id="adrArrivee">
@@ -126,53 +198,33 @@ button{background:#0B2A44;color:#fff;font-weight:bold;border:none;cursor:pointer
 <label>Remarques</label><textarea id="remarques"></textarea>
 
 <button onclick="envoyerWhatsApp()">📲 Envoyer par WhatsApp</button>
-<button onclick="genererPDF()">📄 Télécharger le devis PDF</button>
 
 <p class="small">Tarif indicatif – ajustable selon contraintes réelles • TVA 8.1 % incluse</p>
 
 </div>
 </div>
 
-<!-- POPUP CARTE -->
+<!-- MAP POPUP -->
 <div id="mapPopup">
-  <div id="mapHeader" onclick="closeMap()">← Retour au calculateur</div>
+  <div id="mapHeader" onclick="closeMap()">← Retour au formulaire</div>
   <div id="map"></div>
   <div class="mapInfo" id="mapInfo"></div>
 </div>
 
 <script>
-let coordA, coordB, routeGeo;
+let coordA, coordB, routeGeo, map, routeLayer;
 let dureeMin=0,isInter=false;
-let map, routeLayer;
 
-async function villeFromNPA(npa, field){
-  if(!npa) return;
-
-  const r = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&addressdetails=1&q=${npa}`
-  );
-  const d = await r.json();
-
-  if(!d[0] || !d[0].address){
-    field.value = "";
-    return;
-  }
-
-  const a = d[0].address;
-
-  field.value =
-    a.city ||
-    a.town ||
-    a.village ||
-    a.municipality ||
-    a.hamlet ||
-    "";
+async function villeFromNPA(npa,field){
+ if(!npa) return;
+ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ch&addressdetails=1&q=${npa}`);
+ const d=await r.json();
+ const a=d[0]?.address;
+ field.value=a?.city||a?.town||a?.village||a?.municipality||"";
 }
-
 
 async function calculKm(){
  if(!npaDepart.value||!npaArrivee.value) return;
-
  await villeFromNPA(npaDepart.value,villeDepart);
  await villeFromNPA(npaArrivee.value,villeArrivee);
 
@@ -192,20 +244,19 @@ async function calculKm(){
  const kmCalc=Math.round(d.routes[0].distance/1000);
  dureeMin=Math.round(d.routes[0].duration/60);
  routeGeo=d.routes[0].geometry;
-
  isInter=kmCalc>10;
+
  km.value=`${kmCalc} km`;
  topInfo.textContent=`Distance : ${kmCalc} km • Temps estimé : ${Math.floor(dureeMin/60)}h${dureeMin%60}`;
  btnMap.style.display="block";
-
  calculPrix(kmCalc);
 }
 
 function calculPrix(k){
- if(!k||!poids.value)return;
+ if(!k||!poids.value) return;
  let base=k<=10?25:k<=30?35:k<=80?55:75;
- if(service.value==="Urgent")base*=1.15;
- if(service.value==="Express")base*=1.3;
+ if(service.value==="Urgent") base*=1.15;
+ if(service.value==="Express") base*=1.3;
  let coef=poids.value<=5?1:poids.value<=10?1.1:poids.value<=20?1.2:poids.value<=30?1.3:null;
  if(!coef){prix.textContent="DEVIS";warning.textContent=">30 kg : devis spécial";return;}
  let total=Math.max(25,Math.ceil(base*coef/5)*5);
@@ -224,8 +275,8 @@ function openMap(){
   if(routeLayer) map.removeLayer(routeLayer);
   routeLayer=L.geoJSON(routeGeo,{style:{color:"red",weight:4}}).addTo(map);
   map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
-  L.marker([coordA[1],coordA[0]]).addTo(map).bindPopup("Départ");
-  L.marker([coordB[1],coordB[0]]).addTo(map).bindPopup("Arrivée");
+  L.marker([coordA[1],coordA[0]]).addTo(map);
+  L.marker([coordB[1],coordB[0]]).addTo(map);
   mapInfo.textContent=`${Math.floor(dureeMin/60)}h${dureeMin%60}`;
  },200);
 }
@@ -241,18 +292,6 @@ Service: ${service.value}
 Poids: ${poids.value} kg
 Prix: ${prix.textContent}`;
  window.open(`https://wa.me/41796467442?text=${encodeURIComponent(msg)}`);
-}
-
-function genererPDF(){
- const {jsPDF}=window.jspdf;
- const pdf=new jsPDF();
- pdf.text("DEVIS – LÉMAN COURSES",105,15,{align:"center"});
- pdf.text(`Client : ${clientNom.value}`,10,30);
- pdf.text(`Trajet : ${villeDepart.value} → ${villeArrivee.value}`,10,38);
- pdf.text(`Distance : ${km.value}`,10,46);
- pdf.text(`Prix : ${prix.textContent}`,10,54);
- pdf.text("Temps indicatif selon conditions de circulation",10,62);
- pdf.save("Devis_Leman_Courses.pdf");
 }
 
 [npaDepart,npaArrivee].forEach(e=>e.addEventListener("input",calculKm));
